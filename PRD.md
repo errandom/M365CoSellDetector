@@ -54,6 +54,13 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Progression**: Load historical data → Calculate metrics → Render visualizations → Enable drill-down
 - **Success criteria**: Displays key metrics (active partners, pipeline value, conversion rate) with interactive charts
 
+### 7. Excel Export with Customizable Filters
+- **Functionality**: Export scan results to Excel with comprehensive filtering options and customizable column selection
+- **Purpose**: Enable reporting, analysis, and sharing of co-sell opportunities in a familiar format
+- **Trigger**: User clicks "Export to Excel" button in Results view
+- **Progression**: Open export dialog → Configure filters (status, source type, date range, confidence, partners, customers) → Select columns to include → Apply filters and view preview count → Export to Excel file with Summary sheet
+- **Success criteria**: Successfully exports filtered data to Excel with all selected columns, includes summary statistics sheet, and preserves original data formatting
+
 ## Edge Case Handling
 
 - **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range
@@ -66,6 +73,8 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Duplicate Detection Conflicts**: Show side-by-side comparison and let user choose merge or create new
 - **Insufficient Permissions**: Clear messaging about required permissions with guided setup flow
 - **Custom Keywords Persistence**: Save user's custom keywords between sessions for quick reuse
+- **No Opportunities in Export**: Disable export button and show helpful message about adjusting filters
+- **Excel Export with Zero Filters**: Export all opportunities with full dataset
 
 ## Design Direction
 
@@ -114,20 +123,21 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
 
 - **Components**:
   - **Card**: Primary container for detected co-sell opportunities with hover states and expandable details
-  - **Tabs**: Switch between Dashboard, Scan Results, History, and Settings views
-  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips
-  - **Button**: Primary actions (Scan, Confirm, Edit, Sync) with loading states; also preset buttons for date ranges
-  - **Input**: Text input for adding custom keywords with enter-to-add functionality
-  - **Dialog**: Full-screen review mode for individual opportunities with edit capabilities
+  - **Tabs**: Switch between Dashboard, Scan Results, History, and Settings views; also used for Filters/Columns in export dialog
+  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips and filter selection
+  - **Button**: Primary actions (Scan, Confirm, Edit, Sync, Export) with loading states; also preset buttons for date ranges
+  - **Input**: Text input for adding custom keywords with enter-to-add functionality; also range slider for confidence filtering
+  - **Dialog**: Full-screen review mode for individual opportunities with edit capabilities; export configuration dialog
   - **Table**: Display communication source data and CRM matching results
   - **Progress**: Visual feedback during scanning and AI processing
   - **Select/Dropdown**: Filter controls for date range, source type, partner selection
-  - **Calendar**: Date picker for custom date range selection in popovers
-  - **Checkbox**: Batch selection for multi-confirm actions
+  - **Calendar**: Date picker for custom date range selection in popovers; used for export date filtering
+  - **Checkbox**: Batch selection for multi-confirm actions; column and filter selection in export dialog
   - **Textarea**: Edit extracted summaries and opportunity details
   - **Separator**: Visual hierarchy between sections
-  - **Scroll Area**: Handle long lists of communications and opportunities
+  - **Scroll Area**: Handle long lists of communications and opportunities; export dialog filter lists
   - **Accordion**: Expandable sections for email threads and chat histories
+  - **Popover**: Date picker containers for export date range selection
 
 - **Customizations**:
   - Custom OpportunityCard component combining Card + Badge + actions with Microsoft-inspired layout
@@ -157,10 +167,11 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - Delete: Trash
   - Filter: Funnel
   - AI/Intelligence: Sparkle or Brain
-  - Calendar: Calendar (for date pickers)
+  - Calendar: CalendarBlank (for date pickers)
   - Keywords/Tags: Tag
   - Add: Plus
   - Remove: X
+  - Export: Download
 
 - **Spacing**:
   - Section padding: 6 (1.5rem / 24px)

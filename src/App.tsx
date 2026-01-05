@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Toaster, toast } from 'sonner'
 import { 
-  ChartBar, MagnifyingGlass, Clock, Sparkle, CheckCircle 
+  ChartBar, MagnifyingGlass, Clock, Sparkle, CheckCircle, Download 
 } from '@phosphor-icons/react'
 import { DashboardView } from '@/components/DashboardView'
 import { ScanView } from '@/components/ScanView'
 import { ScanProgress } from '@/components/ScanProgress'
 import { OpportunityCard } from '@/components/OpportunityCard'
 import { OpportunityDialog } from '@/components/OpportunityDialog'
+import { ExportDialog } from '@/components/ExportDialog'
 import { generateDashboardMetrics, simulateAIScan } from '@/lib/mockData'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
@@ -23,6 +24,7 @@ function App() {
   const [opportunities, setOpportunities] = useKV<DetectedOpportunity[]>('opportunities', [])
   const [selectedOpportunity, setSelectedOpportunity] = useState<DetectedOpportunity | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   
   const dashboardMetrics = generateDashboardMetrics()
@@ -241,6 +243,19 @@ function App() {
               </div>
             ) : (
               <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold">All Opportunities</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {opportunities.length} total opportunities detected
+                    </p>
+                  </div>
+                  <Button onClick={() => setExportDialogOpen(true)} variant="outline">
+                    <Download size={16} />
+                    Export to Excel
+                  </Button>
+                </div>
+                
                 {newOpportunities.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-4">
@@ -299,6 +314,12 @@ function App() {
         onOpenChange={setDialogOpen}
         onConfirm={handleConfirm}
         onReject={handleReject}
+      />
+      
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        opportunities={opportunities || []}
       />
       
       <Toaster position="top-right" />
