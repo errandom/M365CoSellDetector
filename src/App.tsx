@@ -37,13 +37,25 @@ function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [currentUser, setCurrentUser] = useKV<MockUser>('currentMockUser', getDefaultUser())
   const [showUserSelector, setShowUserSelector] = useState(false)
+  const [isUserInitialized, setIsUserInitialized] = useState(false)
   
-  const effectiveUser = currentUser || getDefaultUser()
+  const effectiveUser = (currentUser && currentUser.opportunityProfile) ? currentUser : getDefaultUser()
   
   useScheduledExports(opportunities || [])
   
   useEffect(() => {
-    graphService.setCurrentUser(effectiveUser)
+    if (effectiveUser && effectiveUser.opportunityProfile) {
+      graphService.setCurrentUser(effectiveUser)
+      setIsUserInitialized(true)
+    } else {
+      console.error('Effective user is invalid:', effectiveUser)
+      const defaultUser = getDefaultUser()
+      if (defaultUser && defaultUser.opportunityProfile) {
+        setCurrentUser(defaultUser)
+        graphService.setCurrentUser(defaultUser)
+        setIsUserInitialized(true)
+      }
+    }
   }, [effectiveUser])
   
   const handleUserChange = (user: MockUser) => {
@@ -62,6 +74,13 @@ function App() {
     keywords: string[]
     useIncrementalScan: boolean
   }) => {
+    if (!isUserInitialized || !effectiveUser || !effectiveUser.opportunityProfile) {
+      toast.error('User not initialized', {
+        description: 'Please wait for the user profile to load before scanning'
+      })
+      return
+    }
+    
     setIsScanning(true)
     setActiveTab('results')
     

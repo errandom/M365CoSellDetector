@@ -209,8 +209,18 @@ function generateCommunicationForUser(
 export function generateCommunicationsForUser(user: MockUser, count?: number): Communication[] {
   const communications: Communication[] = []
   
-  if (!user || !user.opportunityProfile) {
-    console.error('Invalid user or missing opportunityProfile:', user)
+  if (!user) {
+    console.error('Invalid user - user is null or undefined')
+    return []
+  }
+  
+  if (!user.opportunityProfile) {
+    console.error('Invalid user - missing opportunityProfile:', user)
+    return []
+  }
+  
+  if (typeof user.opportunityProfile.opportunitiesPerMonth !== 'number') {
+    console.error('Invalid opportunityProfile - opportunitiesPerMonth is not a number:', user.opportunityProfile)
     return []
   }
   

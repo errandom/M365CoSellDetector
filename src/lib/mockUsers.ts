@@ -218,8 +218,20 @@ export const MOCK_USERS: MockUser[] = [
   }
 ]
 
-export const getDefaultUser = (): MockUser => MOCK_USERS[0]
+export const getDefaultUser = (): MockUser => {
+  const defaultUser = MOCK_USERS[0]
+  if (!defaultUser || !defaultUser.opportunityProfile) {
+    console.error('CRITICAL: Default user (MOCK_USERS[0]) is invalid or missing opportunityProfile')
+    throw new Error('Application configuration error: Default user is invalid')
+  }
+  return defaultUser
+}
 
 export const getUserById = (id: string): MockUser | undefined => {
-  return MOCK_USERS.find(user => user.id === id)
+  const user = MOCK_USERS.find(user => user.id === id)
+  if (user && !user.opportunityProfile) {
+    console.error(`User ${id} is missing opportunityProfile`, user)
+    return undefined
+  }
+  return user
 }
