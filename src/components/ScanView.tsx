@@ -1,26 +1,85 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { MagnifyingGlass, Calendar as CalendarIcon, Envelope, ChatCircle, Video } from '@phosphor-icons/react'
-import { format } from 'date-fns'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { MagnifyingGlass, Calendar as CalendarIcon, Envelope, ChatCircle, Video, Plus, X, Tag } from '@phosphor-icons/react'
+import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear } from 'date-fns'
 import type { CommunicationType } from '@/lib/types'
 
 interface ScanViewProps {
   onStartScan: (config: {
     dateRange: { from: Date; to: Date }
     sources: CommunicationType[]
+    keywords: string[]
   }) => void
   isScanning: boolean
 }
 
+type DatePreset = {
+  label: string
+  getValue: () => { from: Date; to: Date }
+}
+
+const DEFAULT_KEYWORDS = ['co-sell', 'partner', 'joint opportunity', 'collaboration', 'partnership', 'referral']
+
+const DATE_PRESETS: DatePreset[] = [
+  {
+    label: 'Last 7 days',
+    getValue: () => ({ from: subDays(new Date(), 7), to: new Date() })
+  },
+  {
+    label: 'Last 14 days',
+    getValue: () => ({ from: subDays(new Date(), 14), to: new Date() })
+  },
+  {
+    label: 'Last 30 days',
+    getValue: () => ({ from: subDays(new Date(), 30), to: new Date() })
+  },
+  {
+    label: 'Last 60 days',
+    getValue: () => ({ from: subDays(new Date(), 60), to: new Date() })
+  },
+  {
+    label: 'Last 90 days',
+    getValue: () => ({ from: subDays(new Date(), 90), to: new Date() })
+  },
+  {
+    label: 'This month',
+    getValue: () => ({ from: startOfMonth(new Date()), to: new Date() })
+  },
+  {
+    label: 'Last month',
+    getValue: () => {
+      const lastMonth = subMonths(new Date(), 1)
+      return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) }
+    }
+  },
+  {
+    label: 'This year',
+    getValue: () => ({ from: startOfYear(new Date()), to: new Date() })
+  }
+]
+
 export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
-  const [dateFrom, setDateFrom] = useState<Date>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+  const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30))
   const [dateTo, setDateTo] = useState<Date>(new Date())
   const [selectedSources, setSelectedSources] = useState<CommunicationType[]>(['email', 'chat', 'meeting'])
+  const [savedKeywords, setSavedKeywords] = useKV<string[]>('scan-keywords', DEFAULT_KEYWORDS)
+  const [keywords, setKeywords] = useState<string[]>(DEFAULT_KEYWORDS)
+  const [newKeyword, setNewKeyword] = useState('')
+  const [selectedPreset, setSelectedPreset] = useState<string>('Last 30 days')
+  
+  useEffect(() => {
+    if (savedKeywords && savedKeywords.length > 0) {
+      setKeywords(savedKeywords)
+    }
+  }, [savedKeywords])
   
   const toggleSource = (source: CommunicationType) => {
     setSelectedSources(prev =>
@@ -30,16 +89,53 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
     )
   }
   
+  const applyDatePreset = (preset: DatePreset) => {
+    const { from, to } = preset.getValue()
+    setDateFrom(from)
+    setDateTo(to)
+    setSelectedPreset(preset.label)
+  }
+  
+  const addKeyword = () => {
+    const trimmed = newKeyword.trim().toLowerCase()
+    if (trimmed && !keywords.includes(trimmed)) {
+      const newKeywords = [...keywords, trimmed]
+      setKeywords(newKeywords)
+      setSavedKeywords(newKeywords)
+      setNewKeyword('')
+    }
+  }
+  
+  const removeKeyword = (keyword: string) => {
+    const newKeywords = keywords.filter(k => k !== keyword)
+    setKeywords(newKeywords)
+    setSavedKeywords(newKeywords)
+  }
+  
+  const resetKeywords = () => {
+    setKeywords(DEFAULT_KEYWORDS)
+    setSavedKeywords(DEFAULT_KEYWORDS)
+  }
+  
   const handleStartScan = () => {
-    if (selectedSources.length === 0) return
+    if (selectedSources.length === 0 || keywords.length === 0) return
     onStartScan({
       dateRange: { from: dateFrom, to: dateTo },
-      sources: selectedSources
+      sources: selectedSources,
+      keywords
     })
   }
   
+  const handleDateChange = (type: 'from' | 'to', date: Date | undefined) => {
+    if (date) {
+      if (type === 'from') setDateFrom(date)
+      else setDateTo(date)
+      setSelectedPreset('')
+    }
+  }
+  
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <Card className="p-6">
         <div className="space-y-6">
           <div>
@@ -111,6 +207,20 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
             
             <div>
               <Label className="text-base font-semibold mb-3 block">Date Range</Label>
+              
+              <div className="flex flex-wrap gap-2 mb-3">
+                {DATE_PRESETS.map(preset => (
+                  <Button
+                    key={preset.label}
+                    variant={selectedPreset === preset.label ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyDatePreset(preset)}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-sm mb-2 block">From</Label>
@@ -125,7 +235,7 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
                       <Calendar
                         mode="single"
                         selected={dateFrom}
-                        onSelect={(date) => date && setDateFrom(date)}
+                        onSelect={(date) => handleDateChange('from', date)}
                         initialFocus
                       />
                     </PopoverContent>
@@ -145,7 +255,7 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
                       <Calendar
                         mode="single"
                         selected={dateTo}
-                        onSelect={(date) => date && setDateTo(date)}
+                        onSelect={(date) => handleDateChange('to', date)}
                         initialFocus
                       />
                     </PopoverContent>
@@ -153,25 +263,72 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-semibold text-sm mb-2">Detection Keywords</h4>
-            <p className="text-xs text-muted-foreground mb-2">
-              The AI will scan for these co-sell indicators:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {['co-sell', 'partner', 'joint opportunity', 'collaboration', 'partnership', 'referral'].map(keyword => (
-                <span key={keyword} className="px-2 py-1 bg-background rounded text-xs font-medium">
-                  {keyword}
-                </span>
-              ))}
+            
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Tag size={18} className="text-accent" />
+                  Detection Keywords
+                </Label>
+                <Button variant="ghost" size="sm" onClick={resetKeywords}>
+                  Reset to defaults
+                </Button>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mb-3">
+                Customize the keywords used to identify co-sell opportunities in communications
+              </p>
+              
+              <div className="flex gap-2 mb-3">
+                <Input
+                  placeholder="Add custom keyword..."
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addKeyword()
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Button onClick={addKeyword} disabled={!newKeyword.trim()}>
+                  <Plus size={16} />
+                  Add
+                </Button>
+              </div>
+              
+              <div className="bg-muted p-4 rounded-lg">
+                {keywords.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {keywords.map(keyword => (
+                      <Badge 
+                        key={keyword} 
+                        variant="secondary"
+                        className="pr-1 flex items-center gap-1"
+                      >
+                        {keyword}
+                        <button
+                          onClick={() => removeKeyword(keyword)}
+                          className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                        >
+                          <X size={12} />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    No keywords selected. Add at least one keyword to scan.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           
           <Button 
             onClick={handleStartScan} 
-            disabled={isScanning || selectedSources.length === 0}
+            disabled={isScanning || selectedSources.length === 0 || keywords.length === 0}
             className="w-full"
             size="lg"
           >

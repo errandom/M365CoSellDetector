@@ -13,11 +13,11 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 ## Essential Features
 
 ### 1. Communication Scanner
-- **Functionality**: Scans emails, Teams chats, and meeting transcripts for co-sell keywords and patterns
+- **Functionality**: Scans emails, Teams chats, and meeting transcripts for co-sell keywords and patterns with customizable keyword filters and date range presets
 - **Purpose**: Automatically surface partner collaboration opportunities that would otherwise be buried in communication noise
 - **Trigger**: User clicks "Scan Communications" or sets up automatic periodic scanning
-- **Progression**: Select data sources → Set date range → Apply filters → AI processes communications → Results displayed with confidence scores
-- **Success criteria**: Successfully identifies 90%+ of genuine co-sell discussions with <10% false positive rate
+- **Progression**: Select data sources → Choose date preset or custom range → Customize keyword filters → Apply filters → AI processes communications → Results displayed with confidence scores
+- **Success criteria**: Successfully identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges
 
 ### 2. Entity Extraction Engine
 - **Functionality**: Uses keyword matching and pattern recognition to extract partner names, customer accounts, and opportunity details from communication content
@@ -57,12 +57,15 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 ## Edge Case Handling
 
 - **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range
+- **No Keywords Selected**: Disable scan button and show message prompting user to add at least one keyword
+- **Invalid Date Range**: Prevent scanning if "to" date is before "from" date, show validation message
 - **Ambiguous Partner Names**: Flag for manual review with suggested matches from partner database
 - **Multiple Customers in Thread**: Extract all and create separate opportunity cards for user to review
 - **Expired Auth Token**: Gracefully prompt re-authentication without losing scan progress
 - **CRM Connection Failure**: Queue changes locally and retry with visible status indicator
 - **Duplicate Detection Conflicts**: Show side-by-side comparison and let user choose merge or create new
 - **Insufficient Permissions**: Clear messaging about required permissions with guided setup flow
+- **Custom Keywords Persistence**: Save user's custom keywords between sessions for quick reuse
 
 ## Design Direction
 
@@ -112,12 +115,14 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
 - **Components**:
   - **Card**: Primary container for detected co-sell opportunities with hover states and expandable details
   - **Tabs**: Switch between Dashboard, Scan Results, History, and Settings views
-  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding
-  - **Button**: Primary actions (Scan, Confirm, Edit, Sync) with loading states
+  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips
+  - **Button**: Primary actions (Scan, Confirm, Edit, Sync) with loading states; also preset buttons for date ranges
+  - **Input**: Text input for adding custom keywords with enter-to-add functionality
   - **Dialog**: Full-screen review mode for individual opportunities with edit capabilities
   - **Table**: Display communication source data and CRM matching results
   - **Progress**: Visual feedback during scanning and AI processing
   - **Select/Dropdown**: Filter controls for date range, source type, partner selection
+  - **Calendar**: Date picker for custom date range selection in popovers
   - **Checkbox**: Batch selection for multi-confirm actions
   - **Textarea**: Edit extracted summaries and opportunity details
   - **Separator**: Visual hierarchy between sections
@@ -152,6 +157,10 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - Delete: Trash
   - Filter: Funnel
   - AI/Intelligence: Sparkle or Brain
+  - Calendar: Calendar (for date pickers)
+  - Keywords/Tags: Tag
+  - Add: Plus
+  - Remove: X
 
 - **Spacing**:
   - Section padding: 6 (1.5rem / 24px)

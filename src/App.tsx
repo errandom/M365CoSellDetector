@@ -30,6 +30,7 @@ function App() {
   const handleStartScan = async (config: {
     dateRange: { from: Date; to: Date }
     sources: CommunicationType[]
+    keywords: string[]
   }) => {
     setIsScanning(true)
     setActiveTab('results')
@@ -37,6 +38,7 @@ function App() {
     try {
       const results = await simulateAIScan(
         config.sources,
+        config.keywords,
         (stage, progress) => {
           setScanStage(stage)
           setScanProgress(progress)

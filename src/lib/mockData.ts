@@ -92,11 +92,12 @@ export function generateMockMeetings(count: number = 3): Communication[] {
   return meetings
 }
 
-export function detectOpportunities(communications: Communication[]): DetectedOpportunity[] {
+export function detectOpportunities(communications: Communication[], customKeywords?: string[]): DetectedOpportunity[] {
   const opportunities: DetectedOpportunity[] = []
+  const keywordsToUse = customKeywords && customKeywords.length > 0 ? customKeywords : keywords
   
   communications.forEach(comm => {
-    const foundKeywords = keywords.filter(kw => 
+    const foundKeywords = keywordsToUse.filter(kw => 
       comm.content.toLowerCase().includes(kw) || 
       comm.subject.toLowerCase().includes(kw)
     )
@@ -184,6 +185,7 @@ export function generateDashboardMetrics(): DashboardMetrics {
 
 export async function simulateAIScan(
   sources: ('email' | 'chat' | 'meeting')[],
+  customKeywords?: string[],
   onProgress?: (stage: string, progress: number) => void
 ): Promise<DetectedOpportunity[]> {
   const stages = [
@@ -208,5 +210,5 @@ export async function simulateAIScan(
     }
   }
   
-  return detectOpportunities(allCommunications)
+  return detectOpportunities(allCommunications, customKeywords)
 }
