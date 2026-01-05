@@ -50,8 +50,8 @@ class GraphService {
 
   async getEmails(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<EmailMessage[]> {
     try {
-      if (!this.currentUser) {
-        throw new Error('No user set for mock data generation')
+      if (!this.currentUser || !this.currentUser.opportunityProfile) {
+        throw new Error('No user set for mock data generation or user data is incomplete')
       }
 
       const communications = generateCommunicationsForUser(this.currentUser)
@@ -80,8 +80,8 @@ class GraphService {
 
   async getChats(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<ChatMessage[]> {
     try {
-      if (!this.currentUser) {
-        throw new Error('No user set for mock data generation')
+      if (!this.currentUser || !this.currentUser.opportunityProfile) {
+        throw new Error('No user set for mock data generation or user data is incomplete')
       }
 
       const communications = generateCommunicationsForUser(this.currentUser)
@@ -109,8 +109,8 @@ class GraphService {
 
   async getMeetingTranscripts(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<MeetingTranscript[]> {
     try {
-      if (!this.currentUser) {
-        throw new Error('No user set for mock data generation')
+      if (!this.currentUser || !this.currentUser.opportunityProfile) {
+        throw new Error('No user set for mock data generation or user data is incomplete')
       }
 
       const communications = generateCommunicationsForUser(this.currentUser)

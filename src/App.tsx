@@ -38,15 +38,13 @@ function App() {
   const [currentUser, setCurrentUser] = useKV<MockUser>('currentMockUser', getDefaultUser())
   const [showUserSelector, setShowUserSelector] = useState(false)
   
+  const effectiveUser = currentUser || getDefaultUser()
+  
   useScheduledExports(opportunities || [])
   
   useEffect(() => {
-    if (!currentUser) {
-      setCurrentUser(getDefaultUser())
-    } else {
-      graphService.setCurrentUser(currentUser)
-    }
-  }, [currentUser, setCurrentUser])
+    graphService.setCurrentUser(effectiveUser)
+  }, [effectiveUser])
   
   const handleUserChange = (user: MockUser) => {
     setCurrentUser(user)
@@ -194,10 +192,10 @@ function App() {
   const reviewOpportunities = (opportunities || []).filter(o => o.status === 'review')
   const confirmedOpportunities = (opportunities || []).filter(o => o.status === 'confirmed' || o.status === 'synced')
   
-  if (showUserSelector && currentUser) {
+  if (showUserSelector) {
     return (
       <UserProfileSelector
-        selectedUser={currentUser}
+        selectedUser={effectiveUser}
         onSelectUser={handleUserChange}
         onClose={() => setShowUserSelector(false)}
       />
@@ -223,12 +221,10 @@ function App() {
               </div>
             
             <div className="flex items-center gap-4">
-              {currentUser && (
-                <UserProfileBadge 
-                  user={currentUser} 
-                  onChangeUser={() => setShowUserSelector(true)} 
-                />
-              )}
+              <UserProfileBadge 
+                user={effectiveUser} 
+                onChangeUser={() => setShowUserSelector(true)} 
+              />
               
               {opportunities && opportunities.length > 0 && (
                 <div className="text-right hidden md:block">

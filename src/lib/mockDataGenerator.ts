@@ -209,6 +209,11 @@ function generateCommunicationForUser(
 export function generateCommunicationsForUser(user: MockUser, count?: number): Communication[] {
   const communications: Communication[] = []
   
+  if (!user || !user.opportunityProfile) {
+    console.error('Invalid user or missing opportunityProfile:', user)
+    return []
+  }
+  
   const targetCount = count || Math.floor(user.opportunityProfile.opportunitiesPerMonth * 1.5)
   
   const channelWeights = {
