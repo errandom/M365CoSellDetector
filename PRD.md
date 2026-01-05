@@ -13,11 +13,11 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 ## Essential Features
 
 ### 1. Mock User Profile Selector (Testing Mode)
-- **Functionality**: Provides a visual interface to select from 6 pre-configured test user personas with different roles, access levels, and communication volumes, bypassing Azure AD authentication for development and testing
-- **Purpose**: Enable comprehensive testing of different user scenarios without requiring actual Azure AD app registration or live M365 accounts
+- **Functionality**: Provides a visual interface to select from 6 pre-configured test user personas with different roles, access levels, communication volumes, and comprehensive profile data including communication patterns (preferred channels, message frequency, response times) and opportunity profiles (deal sizes, industries, solutions, conversion rates), bypassing Azure AD authentication for development and testing
+- **Purpose**: Enable comprehensive testing of different user scenarios without requiring actual Azure AD app registration or live M365 accounts, with role-specific mock data generation that creates realistic communications and opportunities tailored to each persona's profile
 - **Trigger**: User clicks on their profile badge in the header, or on app launch when no user is selected
-- **Progression**: Display user selector grid → Show 6 personas with avatars, roles, departments, and descriptions → User selects persona → Profile stored in KV → User badge updates → Toast confirmation → App continues with selected user context
-- **Success criteria**: Users can easily switch between test personas, selection persists across sessions, each persona displays unique metadata (access level, communication volume), clear indication that testing mode is active
+- **Progression**: Display user selector grid → Show 6 personas with avatars, roles, departments, descriptions, and detailed metrics (years experience, messages/day, opportunities/month, conversion rate, avg deal size, sales cycle) → User selects persona → Profile stored in KV → Graph service initialized with user context → User badge updates → Toast confirmation → App continues with selected user context → All subsequent scans generate role-appropriate mock data
+- **Success criteria**: Users can easily switch between test personas, selection persists across sessions, each persona displays comprehensive profile metadata (communication patterns, opportunity profile, experience level, territory, specialization), clear indication that testing mode is active, generated mock data reflects persona characteristics (e.g., Partner Managers see more casual communications with many partners, Junior Reps see smaller deals with formal style, VPs see strategic mega-deals with brief communications)
 
 ### 2. Microsoft 365 Authentication
 - **Functionality**: Secure authentication with Microsoft 365 using MSAL (Microsoft Authentication Library) with popup-based OAuth 2.0 flow
@@ -27,11 +27,11 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Success criteria**: Users can successfully authenticate, tokens are securely stored and automatically refreshed, clear permission explanations provided
 
 ### 3. Communication Scanner
-- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters, date range presets, and incremental scanning that only processes new communications since the last scan
-- **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise, while reducing scan time and API calls through intelligent incremental scanning
+- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters, date range presets, and incremental scanning that only processes new communications since the last scan. In testing mode (authentication suspended), generates role-specific mock communications tailored to each user persona's profile (communication patterns, preferred channels, email style, industry focus, solution areas, partner types) creating realistic, persona-appropriate emails, chats, and meeting transcripts
+- **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise, while reducing scan time and API calls through intelligent incremental scanning. In testing mode, provide realistic, diverse mock data for each user role to demonstrate system capabilities across different co-sell scenarios
 - **Trigger**: User clicks "Scan Communications" after authentication or sets up automatic periodic scanning
-- **Progression**: Select data sources → Choose date preset or custom range → Enable/disable incremental scan → Customize keyword filters → Apply filters → Graph API fetches only new communications since last scan (if enabled) → AI processes communications → Results displayed with confidence scores → Scan timestamps updated for next incremental scan
-- **Success criteria**: Successfully retrieves real M365 data, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges; incremental scanning reduces scan time by 50-80% for subsequent scans
+- **Progression**: Select data sources → Choose date preset or custom range → Enable/disable incremental scan → Customize keyword filters → Apply filters → Graph API fetches only new communications since last scan (if enabled) OR generates role-specific mock data based on current user persona → AI processes communications → Results displayed with confidence scores → Scan timestamps updated for next incremental scan
+- **Success criteria**: Successfully retrieves real M365 data OR generates realistic mock data appropriate to user role, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges; incremental scanning reduces scan time by 50-80% for subsequent scans; mock data reflects persona characteristics (high-volume users get more communications, Partner Managers get partner-focused content, technical roles get architecture discussions, junior roles get smaller deals, executives get strategic briefings)
 
 ### 3. Entity Extraction Engine
 - **Functionality**: Uses AI (GPT-4o-mini via Spark LLM API) and pattern recognition to extract partner names, customer accounts, and opportunity details from real communication content retrieved from Microsoft Graph
@@ -91,10 +91,13 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 
 ## Edge Case Handling
 
-- **No User Selected on Launch**: Automatically show user selector modal and pre-select default user (Sarah Chen)
+- **No User Selected on Launch**: Automatically show user selector modal and pre-select default user (Sarah Chen - Account Executive)
 - **User Profile Deleted from Storage**: Fall back to default user and show notification
 - **Switching Users Mid-Scan**: Preserve scan state but warn user that results are tied to previous user context
+- **Switching Users Clears Previous Data**: When switching user personas, existing opportunities in storage remain but new scans generate data appropriate to new persona
 - **User Access Level Restrictions**: Future feature - show disabled UI for features above user's access level (e.g., admin-only dashboards)
+- **Mock Data Consistency**: Each user persona generates consistent mock data patterns across scans (same partners, industries, solutions based on profile)
+- **Role-Specific Edge Cases**: Junior reps generate smaller deal sizes, executives generate fewer but larger deals, partner managers generate highest communication volume
 - **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range, or check Microsoft Graph API permissions
 - **Graph API Permission Denied**: Show clear error message with link to GRAPH_API_SETUP.md documentation and admin consent instructions
 - **Graph API Rate Limiting**: Implement exponential backoff and display progress when API calls are throttled
@@ -211,6 +214,10 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - Communication Volume: ChartBar (with weight variations)
   - Department: Buildings
   - Email: EnvelopeSimple
+  - Opportunity Metrics: TrendUp
+  - Conversion Rate: CheckCircle
+  - Deal Size: CurrencyDollar
+  - Sales Cycle: Clock
   - Scan/Search: MagnifyingGlass
   - Email: Envelope
   - Chat: ChatCircle

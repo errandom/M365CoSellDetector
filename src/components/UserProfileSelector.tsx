@@ -8,9 +8,13 @@ import {
   Buildings, 
   Sparkle,
   ChartBar,
-  EnvelopeSimple
+  EnvelopeSimple,
+  TrendUp,
+  Clock,
+  CurrencyDollar
 } from '@phosphor-icons/react'
 import { MOCK_USERS, type MockUser } from '@/lib/mockUsers'
+import { getUserStatsSummary } from '@/lib/mockDataGenerator'
 import { cn } from '@/lib/utils'
 
 interface UserProfileSelectorProps {
@@ -42,9 +46,15 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
     }
   }
 
+  const formatDealSize = (user: MockUser) => {
+    const min = user.opportunityProfile.avgDealSize.min / 1000000
+    const max = user.opportunityProfile.avgDealSize.max / 1000000
+    return `$${min.toFixed(1)}M - $${max.toFixed(1)}M`
+  }
+
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -52,7 +62,7 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
               Test User Profile Selector
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Select a user persona to simulate different co-sell scenarios
+              Select a user persona to simulate different co-sell scenarios with role-specific data
             </p>
           </div>
           <Button onClick={onClose} variant="outline">
@@ -62,12 +72,12 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
 
         <Separator className="mb-6" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {MOCK_USERS.map(user => (
             <Card
               key={user.id}
               className={cn(
-                'cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]',
+                'cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01]',
                 selectedUser.id === user.id && 'ring-2 ring-primary shadow-lg'
               )}
               onClick={() => onSelectUser(user)}
@@ -84,7 +94,7 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
                         )}
                       </CardTitle>
                       <CardDescription className="text-xs mt-0.5">
-                        {user.role}
+                        {user.role} • {user.yearsExperience}yr exp
                       </CardDescription>
                     </div>
                   </div>
@@ -98,12 +108,54 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
 
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Buildings size={14} />
-                  {user.department}
+                  {user.department} {user.territory && `• ${user.territory}`}
                 </div>
 
                 <p className="text-sm text-foreground leading-relaxed">
                   {user.description}
                 </p>
+
+                <Separator className="my-2" />
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-foreground">Communication Profile</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <EnvelopeSimple size={12} className="text-muted-foreground" />
+                      <span className="text-muted-foreground">{user.communicationPattern.avgMessagesPerDay} msgs/day</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock size={12} className="text-muted-foreground" />
+                      <span className="text-muted-foreground">{user.communicationPattern.responseTimeHours}hr response</span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Preferred: {user.communicationPattern.preferredChannels.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}
+                  </div>
+                </div>
+
+                <Separator className="my-2" />
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-foreground">Opportunity Profile</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <TrendUp size={12} className="text-muted-foreground" />
+                      <span className="text-muted-foreground">{user.opportunityProfile.opportunitiesPerMonth}/mo</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <CheckCircle size={12} className="text-muted-foreground" />
+                      <span className="text-muted-foreground">{user.opportunityProfile.conversionRate}% conversion</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs">
+                    <CurrencyDollar size={12} className="text-muted-foreground" />
+                    <span className="text-muted-foreground">{formatDealSize(user)} avg deal</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {user.opportunityProfile.avgSalesCycle} days sales cycle
+                  </div>
+                </div>
 
                 <div className="flex items-center gap-2 flex-wrap pt-2">
                   <Badge className={getAccessLevelColor(user.accessLevel)}>
@@ -112,7 +164,7 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
                   </Badge>
                   <Badge variant="outline" className="flex items-center gap-1">
                     {getCommunicationVolumeIcon(user.communicationVolume)}
-                    {user.communicationVolume} volume
+                    {user.communicationVolume}
                   </Badge>
                 </div>
               </CardContent>
@@ -122,18 +174,38 @@ export function UserProfileSelector({ selectedUser, onSelectUser, onClose }: Use
 
         <Card className="mt-6 bg-muted/50">
           <CardHeader>
-            <CardTitle className="text-base">Testing Mode Active</CardTitle>
+            <CardTitle className="text-base">🧪 Role-Based Testing Mode</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <p className="mb-2">
-              This mock user selector bypasses Azure AD authentication for testing purposes. Each user profile will generate different mock data based on their role and communication volume.
+          <CardContent className="text-sm text-muted-foreground space-y-3">
+            <p>
+              Each user persona generates realistic, role-specific communications and opportunities based on their profile. Switch between users to test different co-sell scenarios.
             </p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
-              <li><strong>High volume users</strong> will see more detected opportunities</li>
-              <li><strong>Admin access</strong> users can view all team opportunities</li>
-              <li><strong>Partner Managers</strong> see more partner-focused communications</li>
-              <li><strong>Technical roles</strong> see solution architecture discussions</li>
-            </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div>
+                <strong className="text-foreground">Account Executives</strong>
+                <p>High volume enterprise opportunities, formal communications, strategic partners</p>
+              </div>
+              <div>
+                <strong className="text-foreground">Partner Managers</strong>
+                <p>Maximum partner engagement, casual style, diverse solution areas</p>
+              </div>
+              <div>
+                <strong className="text-foreground">Sales Managers</strong>
+                <p>Strategic deals, executive-level discussions, high deal values</p>
+              </div>
+              <div>
+                <strong className="text-foreground">Solution Architects</strong>
+                <p>Technical deep-dives, detailed proposals, infrastructure focus</p>
+              </div>
+              <div>
+                <strong className="text-foreground">Junior Reps</strong>
+                <p>Learning mode, smaller deals, formal communications, SMB focus</p>
+              </div>
+              <div>
+                <strong className="text-foreground">VP of Sales</strong>
+                <p>Executive oversight, mega-deals, brief updates, strategic only</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -4,6 +4,10 @@ export type OpportunityStatus = 'new' | 'review' | 'confirmed' | 'synced' | 'rej
 
 export type CRMAction = 'create' | 'update' | 'link'
 
+export type IndustryVertical = 'financial-services' | 'healthcare' | 'retail' | 'manufacturing' | 'technology' | 'government' | 'education'
+
+export type SolutionArea = 'azure-migration' | 'modern-workplace' | 'security' | 'data-ai' | 'app-modernization' | 'infrastructure'
+
 export interface Entity {
   name: string
   type: 'partner' | 'customer'

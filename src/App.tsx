@@ -21,6 +21,7 @@ import { useScheduledExports } from '@/hooks/useScheduledExports'
 import { generateDashboardMetrics } from '@/lib/mockData'
 import { detectOpportunitiesFromGraphData } from '@/lib/opportunityDetectionService'
 import { getDefaultUser, getUserById, type MockUser } from '@/lib/mockUsers'
+import { graphService } from '@/lib/graphService'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
 function App() {
@@ -42,11 +43,14 @@ function App() {
   useEffect(() => {
     if (!currentUser) {
       setCurrentUser(getDefaultUser())
+    } else {
+      graphService.setCurrentUser(currentUser)
     }
   }, [currentUser, setCurrentUser])
   
   const handleUserChange = (user: MockUser) => {
     setCurrentUser(user)
+    graphService.setCurrentUser(user)
     toast.success('User profile changed', {
       description: `Now testing as ${user.name} (${user.role})`
     })
