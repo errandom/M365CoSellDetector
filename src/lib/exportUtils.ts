@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { DetectedOpportunity, OpportunityStatus, CommunicationType } from './types'
+import type { DetectedOpportunity, OpportunityStatus, CommunicationType, ExportTemplate } from './types'
 
 export interface ExportFilters {
   status: OpportunityStatus[]
@@ -51,6 +51,88 @@ export const defaultColumns: ExportColumn[] = [
   { field: 'keywords', label: 'Keywords', enabled: false },
   { field: 'existingOpportunityId', label: 'Existing Opp ID', enabled: false },
   { field: 'from', label: 'From', enabled: false },
+]
+
+export const defaultTemplates: ExportTemplate[] = [
+  {
+    id: 'executive-summary',
+    name: 'Executive Summary',
+    description: 'High-level overview with confirmed and synced opportunities only',
+    isDefault: true,
+    filters: {
+      status: ['confirmed', 'synced'],
+      communicationType: [],
+      minConfidence: 0.7,
+    },
+    columns: ['status', 'partner', 'customer', 'dealSize', 'timeline', 'confidence'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'detailed-audit',
+    name: 'Detailed Audit Report',
+    description: 'Complete data export with all fields for auditing and analysis',
+    filters: {
+      status: [],
+      communicationType: [],
+      minConfidence: 0,
+    },
+    columns: ['id', 'status', 'partner', 'customer', 'communicationType', 'subject', 'date', 'summary', 'confidence', 'crmAction', 'dealSize', 'timeline', 'keywords', 'existingOpportunityId', 'from'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'partner-report',
+    name: 'Partner Performance Report',
+    description: 'Focus on partner relationships and collaboration patterns',
+    filters: {
+      status: ['confirmed', 'synced'],
+      communicationType: [],
+      minConfidence: 0,
+    },
+    columns: ['partner', 'customer', 'communicationType', 'date', 'dealSize', 'timeline', 'crmAction'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'review-queue',
+    name: 'Review Queue',
+    description: 'New and pending opportunities requiring review',
+    filters: {
+      status: ['new', 'review'],
+      communicationType: [],
+      minConfidence: 0,
+    },
+    columns: ['status', 'partner', 'customer', 'communicationType', 'subject', 'date', 'summary', 'confidence'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'email-opportunities',
+    name: 'Email-Based Opportunities',
+    description: 'Opportunities detected from email communications only',
+    filters: {
+      status: [],
+      communicationType: ['email'],
+      minConfidence: 0,
+    },
+    columns: ['partner', 'customer', 'subject', 'date', 'from', 'summary', 'confidence', 'status'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'meeting-insights',
+    name: 'Meeting Insights Report',
+    description: 'Opportunities from Teams meetings and transcripts',
+    filters: {
+      status: [],
+      communicationType: ['meeting'],
+      minConfidence: 0,
+    },
+    columns: ['partner', 'customer', 'subject', 'date', 'summary', 'keywords', 'confidence', 'status'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ]
 
 export function applyFilters(
@@ -211,4 +293,37 @@ export function getUniqueCustomers(opportunities: DetectedOpportunity[]): string
     }
   })
   return Array.from(customers).sort()
+}
+
+export function applyTemplate(template: ExportTemplate): { filters: ExportFilters; columns: ExportColumn[] } {
+  const filters: ExportFilters = {
+    status: template.filters.status,
+    communicationType: template.filters.communicationType,
+    minConfidence: template.filters.minConfidence,
+  }
+
+  const columns = defaultColumns.map(col => ({
+    ...col,
+    enabled: template.columns.includes(col.field),
+  }))
+
+  return { filters, columns }
+}
+
+export function createTemplateFromCurrent(
+  name: string,
+  description: string,
+  filters: ExportFilters,
+  columns: ExportColumn[]
+): Omit<ExportTemplate, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    name,
+    description,
+    filters: {
+      status: filters.status,
+      communicationType: filters.communicationType,
+      minConfidence: filters.minConfidence,
+    },
+    columns: columns.filter(col => col.enabled).map(col => col.field),
+  }
 }

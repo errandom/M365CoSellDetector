@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
-import { CalendarBlank, Download, Funnel } from '@phosphor-icons/react'
+import { CalendarBlank, Download, Funnel, Notebook } from '@phosphor-icons/react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { DetectedOpportunity, OpportunityStatus, CommunicationType } from '@/lib/types'
@@ -23,6 +23,7 @@ import {
   type ExportFilters,
   type ExportColumn
 } from '@/lib/exportUtils'
+import { TemplateSelector } from '@/components/TemplateSelector'
 
 interface ExportDialogProps {
   open: boolean
@@ -124,6 +125,15 @@ export function ExportDialog({ open, onOpenChange, opportunities }: ExportDialog
     setSelectedCustomers([])
   }
 
+  const handleApplyTemplate = (templateFilters: ExportFilters, templateColumns: ExportColumn[]) => {
+    setFilters({
+      status: templateFilters.status,
+      communicationType: templateFilters.communicationType,
+    })
+    setMinConfidence(templateFilters.minConfidence || 0)
+    setColumns(templateColumns)
+  }
+
   const handleExport = () => {
     exportToExcel(opportunities, currentFilters, columns)
     onOpenChange(false)
@@ -151,8 +161,12 @@ export function ExportDialog({ open, onOpenChange, opportunities }: ExportDialog
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="filters" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="w-full grid grid-cols-2">
+        <Tabs defaultValue="templates" className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <Notebook size={16} />
+              Templates
+            </TabsTrigger>
             <TabsTrigger value="filters" className="flex items-center gap-2">
               <Funnel size={16} />
               Filters
@@ -164,6 +178,14 @@ export function ExportDialog({ open, onOpenChange, opportunities }: ExportDialog
             </TabsTrigger>
             <TabsTrigger value="columns">Columns</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="templates" className="flex-1 overflow-hidden mt-4">
+            <TemplateSelector
+              currentFilters={currentFilters}
+              currentColumns={columns}
+              onApplyTemplate={handleApplyTemplate}
+            />
+          </TabsContent>
 
           <TabsContent value="filters" className="flex-1 overflow-hidden mt-4">
             <ScrollArea className="h-[400px] pr-4">

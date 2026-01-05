@@ -64,3 +64,18 @@ export interface DashboardMetrics {
     value: number
   }[]
 }
+
+export interface ExportTemplate {
+  id: string
+  name: string
+  description: string
+  isDefault?: boolean
+  filters: {
+    status: OpportunityStatus[]
+    communicationType: CommunicationType[]
+    minConfidence?: number
+  }
+  columns: string[]
+  createdAt: string
+  updatedAt: string
+}

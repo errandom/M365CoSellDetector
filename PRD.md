@@ -54,12 +54,12 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Progression**: Load historical data → Calculate metrics → Render visualizations → Enable drill-down
 - **Success criteria**: Displays key metrics (active partners, pipeline value, conversion rate) with interactive charts
 
-### 7. Excel Export with Customizable Filters
-- **Functionality**: Export scan results to Excel with comprehensive filtering options and customizable column selection
-- **Purpose**: Enable reporting, analysis, and sharing of co-sell opportunities in a familiar format
+### 7. Excel Export with Customizable Templates
+- **Functionality**: Export scan results to Excel with pre-built templates for different reporting needs and the ability to save custom templates
+- **Purpose**: Enable rapid, consistent reporting for different stakeholders (executives, partners, auditors) and support recurring reporting workflows
 - **Trigger**: User clicks "Export to Excel" button in Results view
-- **Progression**: Open export dialog → Configure filters (status, source type, date range, confidence, partners, customers) → Select columns to include → Apply filters and view preview count → Export to Excel file with Summary sheet
-- **Success criteria**: Successfully exports filtered data to Excel with all selected columns, includes summary statistics sheet, and preserves original data formatting
+- **Progression**: Open export dialog → Select from 6+ built-in templates or create custom → Templates tab shows Executive Summary, Detailed Audit, Partner Performance, Review Queue, Email-Based, Meeting Insights → Configure additional filters (status, source type, date range, confidence, partners, customers) → Select columns to include → Preview filtered count → Save current configuration as new template → Export to Excel file with Summary sheet
+- **Success criteria**: Successfully exports filtered data to Excel with template presets, allows saving custom templates that persist between sessions, includes summary statistics sheet, and preserves original data formatting
 
 ## Edge Case Handling
 
@@ -75,6 +75,9 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Custom Keywords Persistence**: Save user's custom keywords between sessions for quick reuse
 - **No Opportunities in Export**: Disable export button and show helpful message about adjusting filters
 - **Excel Export with Zero Filters**: Export all opportunities with full dataset
+- **Template Name Conflicts**: Allow duplicate template names but append timestamp for uniqueness
+- **Deleted Template While Selected**: Clear selection and reset to default template state
+- **Template with Invalid Filters**: Validate filter compatibility before applying (e.g., no data matches template criteria)
 
 ## Design Direction
 
