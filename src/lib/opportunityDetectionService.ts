@@ -1,4 +1,5 @@
 import { graphService, type EmailMessage, type ChatMessage, type MeetingTranscript } from './graphService'
+import { scanHistoryService } from './scanHistoryService'
 import type { DetectedOpportunity, Communication, Entity, CommunicationType } from './types'
 
 export async function detectOpportunitiesFromGraphData(
@@ -6,7 +7,8 @@ export async function detectOpportunitiesFromGraphData(
   endDate: Date,
   sources: CommunicationType[],
   keywords: string[],
-  onProgress?: (stage: string, progress: number) => void
+  onProgress?: (stage: string, progress: number) => void,
+  useIncrementalScan: boolean = true
 ): Promise<DetectedOpportunity[]> {
   const opportunities: DetectedOpportunity[] = []
 
@@ -14,8 +16,32 @@ export async function detectOpportunitiesFromGraphData(
     onProgress?.('Connecting to Microsoft Graph API...', 10)
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    onProgress?.('Fetching communications from M365...', 20)
-    const data = await graphService.scanCommunications(startDate, endDate, sources, keywords)
+    const lastScanDates: { email?: Date; chat?: Date; meeting?: Date } = {}
+    
+    if (useIncrementalScan) {
+      onProgress?.('Checking for previous scans...', 15)
+      for (const source of sources) {
+        const lastScan = await scanHistoryService.getLastScanDate(source)
+        if (lastScan) {
+          lastScanDates[source] = lastScan
+        }
+      }
+    }
+
+    const hasIncrementalData = Object.keys(lastScanDates).length > 0
+    if (hasIncrementalData) {
+      onProgress?.('Fetching only new communications since last scan...', 20)
+    } else {
+      onProgress?.('Fetching communications from M365...', 20)
+    }
+    
+    const data = await graphService.scanCommunications(
+      startDate, 
+      endDate, 
+      sources, 
+      keywords,
+      lastScanDates
+    )
 
     onProgress?.('Processing emails...', 40)
     for (const email of data.emails) {
@@ -43,6 +69,12 @@ export async function detectOpportunitiesFromGraphData(
 
     onProgress?.('Analyzing opportunities with AI...', 90)
     await new Promise(resolve => setTimeout(resolve, 500))
+
+    const scanEndDate = new Date()
+    for (const source of sources) {
+      await scanHistoryService.updateScanDate(source, scanEndDate)
+    }
+    await scanHistoryService.updateFullScanDate(scanEndDate)
 
     onProgress?.('Finalizing results...', 100)
 

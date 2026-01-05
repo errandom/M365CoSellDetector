@@ -41,10 +41,11 @@ class GraphService {
     return this.client
   }
 
-  async getEmails(startDate: Date, endDate: Date): Promise<EmailMessage[]> {
+  async getEmails(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<EmailMessage[]> {
     try {
       const client = await this.getClient()
-      const startISO = startDate.toISOString()
+      const effectiveStartDate = lastScanDate && lastScanDate > startDate ? lastScanDate : startDate
+      const startISO = effectiveStartDate.toISOString()
       const endISO = endDate.toISOString()
       
       const response = await client
@@ -68,9 +69,10 @@ class GraphService {
     }
   }
 
-  async getChats(startDate: Date, endDate: Date): Promise<ChatMessage[]> {
+  async getChats(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<ChatMessage[]> {
     try {
       const client = await this.getClient()
+      const effectiveStartDate = lastScanDate && lastScanDate > startDate ? lastScanDate : startDate
       
       const chatsResponse = await client
         .api('/me/chats')
@@ -88,7 +90,7 @@ class GraphService {
 
           for (const msg of messagesResponse.value) {
             const msgDate = new Date(msg.createdDateTime)
-            if (msgDate >= startDate && msgDate <= endDate) {
+            if (msgDate >= effectiveStartDate && msgDate <= endDate) {
               allMessages.push({
                 id: msg.id,
                 chatId: chat.id,
@@ -110,13 +112,14 @@ class GraphService {
     }
   }
 
-  async getMeetingTranscripts(startDate: Date, endDate: Date): Promise<MeetingTranscript[]> {
+  async getMeetingTranscripts(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<MeetingTranscript[]> {
     try {
       const client = await this.getClient()
+      const effectiveStartDate = lastScanDate && lastScanDate > startDate ? lastScanDate : startDate
       
       const meetingsResponse = await client
         .api('/me/onlineMeetings')
-        .filter(`startDateTime ge ${startDate.toISOString()} and endDateTime le ${endDate.toISOString()}`)
+        .filter(`startDateTime ge ${effectiveStartDate.toISOString()} and endDateTime le ${endDate.toISOString()}`)
         .top(50)
         .get()
 
@@ -156,7 +159,8 @@ class GraphService {
     startDate: Date,
     endDate: Date,
     sources: CommunicationType[],
-    keywords: string[]
+    keywords: string[],
+    lastScanDates?: { email?: Date; chat?: Date; meeting?: Date }
   ): Promise<{
     emails: EmailMessage[]
     chats: ChatMessage[]
@@ -171,7 +175,7 @@ class GraphService {
     const keywordRegex = new RegExp(keywords.join('|'), 'gi')
 
     if (sources.includes('email')) {
-      const emails = await this.getEmails(startDate, endDate)
+      const emails = await this.getEmails(startDate, endDate, lastScanDates?.email)
       results.emails = emails.filter(
         (email) =>
           keywordRegex.test(email.subject) ||
@@ -181,12 +185,12 @@ class GraphService {
     }
 
     if (sources.includes('chat')) {
-      const chats = await this.getChats(startDate, endDate)
+      const chats = await this.getChats(startDate, endDate, lastScanDates?.chat)
       results.chats = chats.filter((chat) => keywordRegex.test(chat.body))
     }
 
     if (sources.includes('meeting')) {
-      const transcripts = await this.getMeetingTranscripts(startDate, endDate)
+      const transcripts = await this.getMeetingTranscripts(startDate, endDate, lastScanDates?.meeting)
       results.transcripts = transcripts.filter((transcript) =>
         keywordRegex.test(transcript.content)
       )

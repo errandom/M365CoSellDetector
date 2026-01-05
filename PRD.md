@@ -20,11 +20,11 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Success criteria**: Users can successfully authenticate, tokens are securely stored and automatically refreshed, clear permission explanations provided
 
 ### 2. Communication Scanner
-- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters and date range presets
-- **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise
+- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters, date range presets, and incremental scanning that only processes new communications since the last scan
+- **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise, while reducing scan time and API calls through intelligent incremental scanning
 - **Trigger**: User clicks "Scan Communications" after authentication or sets up automatic periodic scanning
-- **Progression**: Select data sources → Choose date preset or custom range → Customize keyword filters → Apply filters → Graph API fetches communications → AI processes communications → Results displayed with confidence scores
-- **Success criteria**: Successfully retrieves real M365 data, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges
+- **Progression**: Select data sources → Choose date preset or custom range → Enable/disable incremental scan → Customize keyword filters → Apply filters → Graph API fetches only new communications since last scan (if enabled) → AI processes communications → Results displayed with confidence scores → Scan timestamps updated for next incremental scan
+- **Success criteria**: Successfully retrieves real M365 data, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges; incremental scanning reduces scan time by 50-80% for subsequent scans
 
 ### 2. Entity Extraction Engine
 - **Functionality**: Uses AI (GPT-4o-mini via Spark LLM API) and pattern recognition to extract partner names, customer accounts, and opportunity details from real communication content retrieved from Microsoft Graph
@@ -69,11 +69,18 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Success criteria**: Successfully exports filtered data to Excel with template presets, allows saving custom templates that persist between sessions, includes summary statistics sheet, and preserves original data formatting
 
 ### 8. Scheduled Automatic Exports
-- **Functionality**: Set up recurring exports that automatically generate and deliver reports via email on a schedule (daily, weekly, monthly)
-- **Purpose**: Automate routine reporting workflows and ensure stakeholders receive updates without manual intervention
+- **Functionality**: Set up recurring exports that automatically generate and deliver reports via email on a schedule (daily, weekly, monthly), leveraging incremental scanning for efficient automated reporting
+- **Purpose**: Automate routine reporting workflows and ensure stakeholders receive updates without manual intervention, with faster execution through incremental data updates
 - **Trigger**: User clicks "Schedule Exports" button and configures a new schedule
-- **Progression**: Open scheduled exports dialog → View existing schedules with status indicators → Click "New Schedule" → Enter schedule name → Select export template → Choose frequency (daily/weekly/monthly) → Set day and time → Add email recipients (one or more) → Enable/disable schedule → System runs exports automatically at scheduled times → Generates Excel file → Simulates email delivery to recipients → Updates last run and next run times → Users can edit, pause, or delete schedules
-- **Success criteria**: Successfully creates and persists schedules, executes exports at correct times (with 1-minute precision), generates proper Excel files using selected template, displays accurate next run calculations, allows enabling/disabling without deletion, validates all inputs before saving
+- **Progression**: Open scheduled exports dialog → View existing schedules with status indicators → Click "New Schedule" → Enter schedule name → Select export template → Choose frequency (daily/weekly/monthly) → Set day and time → Add email recipients (one or more) → Enable/disable schedule → System runs exports automatically at scheduled times using incremental scanning → Generates Excel file → Simulates email delivery to recipients → Updates last run and next run times → Users can edit, pause, or delete schedules
+- **Success criteria**: Successfully creates and persists schedules, executes exports at correct times (with 1-minute precision), generates proper Excel files using selected template with incremental data updates, displays accurate next run calculations, allows enabling/disabling without deletion, validates all inputs before saving
+
+### 9. Incremental Scanning
+- **Functionality**: Track last scan timestamps for each communication source (email, chat, meeting) and only fetch new communications since the last scan, with user control to enable/disable incremental scanning
+- **Purpose**: Dramatically reduce scan time and API calls for subsequent scans by avoiding reprocessing of previously scanned communications
+- **Trigger**: Automatically applies when user runs a scan with incremental scanning enabled (default on)
+- **Progression**: User opens scan view → Scan history card displays last scan dates per source → User enables/disables incremental scanning via toggle → User starts scan → System checks last scan timestamps → Graph API queries only filter communications newer than last scan date → Processes only new communications → Updates scan timestamps for next run → Displays scan history with relative timestamps
+- **Success criteria**: Reduces scan time by 50-80% for subsequent scans, accurately tracks last scan date per source type, allows manual clearing of scan history, persists incremental scan preference between sessions, displays clear feedback about incremental vs full scans
 
 ## Edge Case Handling
 
@@ -103,6 +110,9 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Missing Template for Schedule**: Handle gracefully if a scheduled export references a deleted template, show warning in schedule list
 - **Multiple Schedules at Same Time**: Execute all scheduled exports that are due without conflicts
 - **Schedule Running During Export Dialog**: Allow simultaneous scheduled and manual exports without interference
+- **Incremental Scan Data Loss**: Handle edge cases where scan history is deleted or corrupted by falling back to full scan
+- **First Scan with Incremental Enabled**: Perform full scan on first run when no scan history exists
+- **Date Range Conflict with Incremental**: If user selects date range before last scan, disable incremental scanning and perform full scan for that range
 
 ## Design Direction
 
@@ -150,10 +160,10 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
 ## Component Selection
 
 - **Components**:
-  - **Card**: Primary container for detected co-sell opportunities with hover states and expandable details; also used for displaying scheduled export entries
+  - **Card**: Primary container for detected co-sell opportunities with hover states and expandable details; also used for displaying scheduled export entries and scan history information
   - **Tabs**: Switch between Dashboard, Scan Results, History, and Settings views; also used for Filters/Columns in export dialog
-  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips, filter selection, and schedule status (Active/Paused)
-  - **Button**: Primary actions (Scan, Confirm, Edit, Sync, Export, Schedule Exports) with loading states; also preset buttons for date ranges
+  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips, filter selection, schedule status (Active/Paused), and scan timestamp displays
+  - **Button**: Primary actions (Scan, Confirm, Edit, Sync, Export, Schedule Exports, Clear History) with loading states; also preset buttons for date ranges
   - **Input**: Text input for adding custom keywords with enter-to-add functionality; also range slider for confidence filtering, email address input for schedule recipients, time picker for schedule configuration, number input for day of month
   - **Dialog**: Full-screen review mode for individual opportunities with edit capabilities; export configuration dialog; scheduled exports management dialog with split-pane layout
   - **Table**: Display communication source data and CRM matching results
@@ -166,7 +176,7 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - **Scroll Area**: Handle long lists of communications and opportunities; export dialog filter lists; schedule list with many entries
   - **Accordion**: Expandable sections for email threads and chat histories
   - **Popover**: Date picker containers for export date range selection
-  - **Switch**: Enable/disable scheduled exports without deletion, providing quick toggle functionality
+  - **Switch**: Enable/disable scheduled exports without deletion, providing quick toggle functionality; also used for toggling incremental scanning on/off
 
 - **Customizations**:
   - Custom OpportunityCard component combining Card + Badge + actions with Microsoft-inspired layout
@@ -207,6 +217,8 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - Email Recipients: Envelope
   - Next Run Time: CalendarBlank
   - Toggle Schedule: Switch (component, not icon)
+  - Incremental Scan: ArrowClockwise
+  - Scan History: Clock
 
 - **Spacing**:
   - Section padding: 6 (1.5rem / 24px)

@@ -8,6 +8,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { ScanHistoryCard } from '@/components/ScanHistoryCard'
 import { MagnifyingGlass, Calendar as CalendarIcon, Envelope, ChatCircle, Video, Plus, X, Tag } from '@phosphor-icons/react'
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear } from 'date-fns'
 import type { CommunicationType } from '@/lib/types'
@@ -17,6 +18,7 @@ interface ScanViewProps {
     dateRange: { from: Date; to: Date }
     sources: CommunicationType[]
     keywords: string[]
+    useIncrementalScan: boolean
   }) => void
   isScanning: boolean
 }
@@ -74,6 +76,7 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
   const [keywords, setKeywords] = useState<string[]>(DEFAULT_KEYWORDS)
   const [newKeyword, setNewKeyword] = useState('')
   const [selectedPreset, setSelectedPreset] = useState<string>('Last 30 days')
+  const [useIncrementalScan, setUseIncrementalScan] = useKV<boolean>('use-incremental-scan', true)
   
   useEffect(() => {
     if (savedKeywords && savedKeywords.length > 0) {
@@ -122,7 +125,8 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
     onStartScan({
       dateRange: { from: dateFrom, to: dateTo },
       sources: selectedSources,
-      keywords
+      keywords,
+      useIncrementalScan: useIncrementalScan ?? true
     })
   }
   
@@ -135,7 +139,12 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
   }
   
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
+      <ScanHistoryCard 
+        useIncrementalScan={useIncrementalScan ?? true} 
+        onToggleIncrementalScan={setUseIncrementalScan} 
+      />
+      
       <Card className="p-6">
         <div className="space-y-6">
           <div>

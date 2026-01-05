@@ -40,6 +40,7 @@ function App() {
     dateRange: { from: Date; to: Date }
     sources: CommunicationType[]
     keywords: string[]
+    useIncrementalScan: boolean
   }) => {
     setIsScanning(true)
     setActiveTab('results')
@@ -53,7 +54,8 @@ function App() {
         (stage, progress) => {
           setScanStage(stage)
           setScanProgress(progress)
-        }
+        },
+        config.useIncrementalScan
       )
       
       setOpportunities((current) => {
