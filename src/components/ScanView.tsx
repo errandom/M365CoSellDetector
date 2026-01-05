@@ -140,9 +140,15 @@ export function ScanView({ onStartScan, isScanning }: ScanViewProps) {
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold mb-2">Scan for Co-Sell Opportunities</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-3">
               Configure your scan to detect partner collaboration opportunities across your Microsoft 365 communications.
             </p>
+            <div className="flex items-center gap-2 text-xs bg-accent/10 text-accent-foreground px-3 py-2 rounded-md border border-accent/20">
+              <Badge variant="secondary" className="bg-accent text-accent-foreground">
+                Live Data
+              </Badge>
+              <span>Connected to Microsoft Graph API - scanning real emails, chats, and meetings</span>
+            </div>
           </div>
           
           <div className="space-y-4">

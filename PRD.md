@@ -12,19 +12,26 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 
 ## Essential Features
 
-### 1. Communication Scanner
-- **Functionality**: Scans emails, Teams chats, and meeting transcripts for co-sell keywords and patterns with customizable keyword filters and date range presets
-- **Purpose**: Automatically surface partner collaboration opportunities that would otherwise be buried in communication noise
-- **Trigger**: User clicks "Scan Communications" or sets up automatic periodic scanning
-- **Progression**: Select data sources → Choose date preset or custom range → Customize keyword filters → Apply filters → AI processes communications → Results displayed with confidence scores
-- **Success criteria**: Successfully identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges
+### 1. Microsoft 365 Authentication
+- **Functionality**: Secure authentication with Microsoft 365 using MSAL (Microsoft Authentication Library) with popup-based OAuth 2.0 flow
+- **Purpose**: Establish secure, delegated access to user's M365 communications (emails, chats, meeting transcripts)
+- **Trigger**: User opens app without existing authentication
+- **Progression**: Display sign-in screen → User clicks "Sign in with Microsoft" → Azure AD popup authentication → User consents to permissions (Mail.Read, Chat.Read, OnlineMeetings.Read, CallRecords.Read) → Token stored securely → Access granted
+- **Success criteria**: Users can successfully authenticate, tokens are securely stored and automatically refreshed, clear permission explanations provided
+
+### 2. Communication Scanner
+- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters and date range presets
+- **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise
+- **Trigger**: User clicks "Scan Communications" after authentication or sets up automatic periodic scanning
+- **Progression**: Select data sources → Choose date preset or custom range → Customize keyword filters → Apply filters → Graph API fetches communications → AI processes communications → Results displayed with confidence scores
+- **Success criteria**: Successfully retrieves real M365 data, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges
 
 ### 2. Entity Extraction Engine
-- **Functionality**: Uses keyword matching and pattern recognition to extract partner names, customer accounts, and opportunity details from communication content
-- **Purpose**: Automatically populate CRM fields without manual data entry
-- **Trigger**: Runs automatically on filtered communications
-- **Progression**: Analyze message content → Identify entities (partners, customers) → Extract key details (deal size, timeline) → Map to CRM schema
-- **Success criteria**: Correctly extracts partner and customer names with 85%+ accuracy
+- **Functionality**: Uses AI (GPT-4o-mini via Spark LLM API) and pattern recognition to extract partner names, customer accounts, and opportunity details from real communication content retrieved from Microsoft Graph
+- **Purpose**: Automatically populate CRM fields without manual data entry by analyzing actual email, chat, and meeting transcript content
+- **Trigger**: Runs automatically on filtered communications retrieved from Graph API
+- **Progression**: Receive communications from Graph API → AI analyzes message content → Identify entities (partners, customers) → Extract key details (deal size, timeline) → Map to CRM schema → Generate confidence scores
+- **Success criteria**: Correctly extracts partner and customer names with 85%+ accuracy from real M365 communications
 
 ### 3. CRM Opportunity Matching
 - **Functionality**: Cross-references detected communications with existing Dynamics 365 opportunities
@@ -40,12 +47,12 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Progression**: Display detected interactions → Show extracted entities → Highlight CRM action (create/update) → User reviews/edits → Batch confirm or individual approve → Sync to CRM
 - **Success criteria**: Users can review, edit, and confirm/reject all detected opportunities within 2 minutes
 
-### 5. AI Conversation Summarization
-- **Functionality**: Generates natural language summaries of email threads and chat conversations
-- **Purpose**: Help users quickly understand context without reading full message history
-- **Trigger**: Automatically generated for each detected co-sell interaction
-- **Progression**: Collect message thread → AI summarizes key points → Extract action items → Display concise summary
-- **Success criteria**: Summaries capture essential context in <50 words, users can understand opportunity without reading original
+### 4. AI Conversation Summarization
+- **Functionality**: Uses GPT-4o-mini to generate natural language summaries of email threads, chat conversations, and meeting transcripts retrieved from Microsoft Graph
+- **Purpose**: Help users quickly understand context without reading full message history from their actual M365 communications
+- **Trigger**: Automatically generated for each detected co-sell interaction from Graph API data
+- **Progression**: Collect message thread from Graph API → AI summarizes key points → Extract action items → Display concise summary
+- **Success criteria**: Summaries capture essential context in <50 words, users can understand opportunity without reading original communications
 
 ### 6. Partner Intelligence Dashboard
 - **Functionality**: Visualizes co-sell activity trends, top partners, and opportunity pipeline
@@ -70,12 +77,17 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 
 ## Edge Case Handling
 
-- **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range
+- **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range, or check Microsoft Graph API permissions
+- **Graph API Permission Denied**: Show clear error message with link to GRAPH_API_SETUP.md documentation and admin consent instructions
+- **Graph API Rate Limiting**: Implement exponential backoff and display progress when API calls are throttled
+- **Authentication Token Expired**: Automatically attempt silent token refresh; if fails, prompt re-authentication without losing scan progress
 - **No Keywords Selected**: Disable scan button and show message prompting user to add at least one keyword
 - **Invalid Date Range**: Prevent scanning if "to" date is before "from" date, show validation message
 - **Ambiguous Partner Names**: Flag for manual review with suggested matches from partner database
 - **Multiple Customers in Thread**: Extract all and create separate opportunity cards for user to review
 - **Expired Auth Token**: Gracefully prompt re-authentication without losing scan progress
+- **Missing Graph API Credentials**: Show setup instructions and link to Azure AD app registration documentation
+- **Teams Transcript Unavailable**: Gracefully handle when meetings don't have transcripts (not recorded or transcription disabled)
 - **CRM Connection Failure**: Queue changes locally and retry with visible status indicator
 - **Duplicate Detection Conflicts**: Show side-by-side comparison and let user choose merge or create new
 - **Insufficient Permissions**: Clear messaging about required permissions with guided setup flow

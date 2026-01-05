@@ -7,6 +7,7 @@ import { Toaster, toast } from 'sonner'
 import { 
   ChartBar, MagnifyingGlass, Clock as ClockIcon, Sparkle, CheckCircle, Download, CalendarCheck
 } from '@phosphor-icons/react'
+import { AuthGuard } from '@/components/AuthGuard'
 import { DashboardView } from '@/components/DashboardView'
 import { ScanView } from '@/components/ScanView'
 import { ScanProgress } from '@/components/ScanProgress'
@@ -15,7 +16,8 @@ import { OpportunityDialog } from '@/components/OpportunityDialog'
 import { ExportDialog } from '@/components/ExportDialog'
 import { ScheduledExportsDialog } from '@/components/ScheduledExportsDialog'
 import { useScheduledExports } from '@/hooks/useScheduledExports'
-import { generateDashboardMetrics, simulateAIScan } from '@/lib/mockData'
+import { generateDashboardMetrics } from '@/lib/mockData'
+import { detectOpportunitiesFromGraphData } from '@/lib/opportunityDetectionService'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
 function App() {
@@ -43,7 +45,9 @@ function App() {
     setActiveTab('results')
     
     try {
-      const results = await simulateAIScan(
+      const results = await detectOpportunitiesFromGraphData(
+        config.dateRange.from,
+        config.dateRange.to,
         config.sources,
         config.keywords,
         (stage, progress) => {
@@ -63,9 +67,10 @@ function App() {
       toast.success('Scan completed!', {
         description: `Found ${results.length} potential co-sell opportunities`
       })
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Scan error:', error)
       toast.error('Scan failed', {
-        description: 'Please try again or adjust your scan settings'
+        description: error.message || 'Please check your permissions and try again'
       })
     } finally {
       setIsScanning(false)
@@ -166,21 +171,22 @@ function App() {
   const confirmedOpportunities = (opportunities || []).filter(o => o.status === 'confirmed' || o.status === 'synced')
   
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-accent/10 rounded-lg">
-                <Sparkle size={24} weight="duotone" className="text-accent" />
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-accent/10 rounded-lg">
+                  <Sparkle size={24} weight="duotone" className="text-accent" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">M365 Co-Sell Intelligence</h1>
+                  <p className="text-xs text-muted-foreground">
+                    AI-Powered Partner Opportunity Detection
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">M365 Co-Sell Intelligence</h1>
-                <p className="text-xs text-muted-foreground">
-                  AI-Powered Partner Opportunity Detection
-                </p>
-              </div>
-            </div>
             
             {opportunities && opportunities.length > 0 && (
               <div className="flex items-center gap-4">
@@ -339,7 +345,8 @@ function App() {
       />
       
       <Toaster position="top-right" />
-    </div>
+      </div>
+    </AuthGuard>
   )
 }
 

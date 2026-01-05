@@ -1,0 +1,286 @@
+import { graphService, type EmailMessage, type ChatMessage, type MeetingTranscript } from './graphService'
+import type { DetectedOpportunity, Communication, Entity, CommunicationType } from './types'
+
+export async function detectOpportunitiesFromGraphData(
+  startDate: Date,
+  endDate: Date,
+  sources: CommunicationType[],
+  keywords: string[],
+  onProgress?: (stage: string, progress: number) => void
+): Promise<DetectedOpportunity[]> {
+  const opportunities: DetectedOpportunity[] = []
+
+  try {
+    onProgress?.('Connecting to Microsoft Graph API...', 10)
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    onProgress?.('Fetching communications from M365...', 20)
+    const data = await graphService.scanCommunications(startDate, endDate, sources, keywords)
+
+    onProgress?.('Processing emails...', 40)
+    for (const email of data.emails) {
+      const opportunity = await processEmail(email, keywords)
+      if (opportunity) {
+        opportunities.push(opportunity)
+      }
+    }
+
+    onProgress?.('Processing Teams chats...', 60)
+    for (const chat of data.chats) {
+      const opportunity = await processChat(chat, keywords)
+      if (opportunity) {
+        opportunities.push(opportunity)
+      }
+    }
+
+    onProgress?.('Processing meeting transcripts...', 80)
+    for (const transcript of data.transcripts) {
+      const opportunity = await processTranscript(transcript, keywords)
+      if (opportunity) {
+        opportunities.push(opportunity)
+      }
+    }
+
+    onProgress?.('Analyzing opportunities with AI...', 90)
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    onProgress?.('Finalizing results...', 100)
+
+    return opportunities
+  } catch (error) {
+    console.error('Error detecting opportunities:', error)
+    throw error
+  }
+}
+
+async function processEmail(email: EmailMessage, keywords: string[]): Promise<DetectedOpportunity | null> {
+  try {
+    const matchedKeywords = keywords.filter(
+      (kw) =>
+        email.subject.toLowerCase().includes(kw.toLowerCase()) ||
+        email.body.toLowerCase().includes(kw.toLowerCase())
+    )
+
+    if (matchedKeywords.length === 0) return null
+
+    const partner = await extractPartner(email.body)
+    const customer = await extractCustomer(email.body)
+    const summary = await generateSummary(email.subject, email.body)
+
+    const communication: Communication = {
+      id: email.id,
+      type: 'email',
+      subject: email.subject,
+      from: email.from,
+      date: email.receivedDateTime,
+      preview: email.bodyPreview,
+      content: email.body,
+    }
+
+    return {
+      id: `opp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      communication,
+      partner,
+      customer,
+      summary,
+      keywords: matchedKeywords,
+      confidence: calculateConfidence(matchedKeywords.length, partner, customer),
+      status: 'new',
+      crmAction: 'create',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error('Error processing email:', error)
+    return null
+  }
+}
+
+async function processChat(chat: ChatMessage, keywords: string[]): Promise<DetectedOpportunity | null> {
+  try {
+    const matchedKeywords = keywords.filter((kw) =>
+      chat.body.toLowerCase().includes(kw.toLowerCase())
+    )
+
+    if (matchedKeywords.length === 0) return null
+
+    const partner = await extractPartner(chat.body)
+    const customer = await extractCustomer(chat.body)
+    const summary = await generateSummary('Teams Chat', chat.body)
+
+    const communication: Communication = {
+      id: chat.id,
+      type: 'chat',
+      subject: 'Teams Chat Message',
+      from: chat.from,
+      date: chat.createdDateTime,
+      preview: chat.body.substring(0, 150),
+      content: chat.body,
+    }
+
+    return {
+      id: `opp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      communication,
+      partner,
+      customer,
+      summary,
+      keywords: matchedKeywords,
+      confidence: calculateConfidence(matchedKeywords.length, partner, customer),
+      status: 'new',
+      crmAction: 'create',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error('Error processing chat:', error)
+    return null
+  }
+}
+
+async function processTranscript(
+  transcript: MeetingTranscript,
+  keywords: string[]
+): Promise<DetectedOpportunity | null> {
+  try {
+    const matchedKeywords = keywords.filter((kw) =>
+      transcript.content.toLowerCase().includes(kw.toLowerCase())
+    )
+
+    if (matchedKeywords.length === 0) return null
+
+    const partner = await extractPartner(transcript.content)
+    const customer = await extractCustomer(transcript.content)
+    const summary = await generateSummary('Meeting Transcript', transcript.content)
+
+    const communication: Communication = {
+      id: transcript.id,
+      type: 'meeting',
+      subject: 'Teams Meeting Transcript',
+      from: 'Meeting Participant',
+      date: transcript.createdDateTime,
+      preview: transcript.content.substring(0, 150),
+      content: transcript.content,
+    }
+
+    return {
+      id: `opp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      communication,
+      partner,
+      customer,
+      summary,
+      keywords: matchedKeywords,
+      confidence: calculateConfidence(matchedKeywords.length, partner, customer),
+      status: 'new',
+      crmAction: 'create',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error('Error processing transcript:', error)
+    return null
+  }
+}
+
+async function extractPartner(content: string): Promise<Entity | null> {
+  const partnerKeywords = [
+    'partner',
+    'microsoft',
+    'vendor',
+    'supplier',
+    'consultant',
+    'integrator',
+  ]
+
+  const prompt = window.spark.llmPrompt`Extract the partner company name from this text. If no partner is mentioned, return null.
+
+Text: ${content}
+
+Return a JSON object with:
+- name: the partner company name (or null)
+- confidence: a number between 0 and 1 indicating confidence
+
+Only return the JSON, no other text.`
+
+  try {
+    const result = await window.spark.llm(prompt, 'gpt-4o-mini', true)
+    const parsed = JSON.parse(result)
+
+    if (!parsed.name) return null
+
+    return {
+      name: parsed.name,
+      type: 'partner',
+      confidence: parsed.confidence || 0.5,
+    }
+  } catch (error) {
+    console.error('Error extracting partner:', error)
+    return null
+  }
+}
+
+async function extractCustomer(content: string): Promise<Entity | null> {
+  const prompt = window.spark.llmPrompt`Extract the customer/client company name from this text. If no customer is mentioned, return null.
+
+Text: ${content}
+
+Return a JSON object with:
+- name: the customer company name (or null)
+- confidence: a number between 0 and 1 indicating confidence
+
+Only return the JSON, no other text.`
+
+  try {
+    const result = await window.spark.llm(prompt, 'gpt-4o-mini', true)
+    const parsed = JSON.parse(result)
+
+    if (!parsed.name) return null
+
+    return {
+      name: parsed.name,
+      type: 'customer',
+      confidence: parsed.confidence || 0.5,
+    }
+  } catch (error) {
+    console.error('Error extracting customer:', error)
+    return null
+  }
+}
+
+async function generateSummary(subject: string, content: string): Promise<string> {
+  const truncatedContent = content.substring(0, 2000)
+
+  const prompt = window.spark.llmPrompt`Summarize this communication in 1-2 sentences, focusing on the co-sell opportunity aspects.
+
+Subject: ${subject}
+Content: ${truncatedContent}
+
+Provide a concise summary (max 50 words) that captures the key opportunity details.`
+
+  try {
+    const summary = await window.spark.llm(prompt, 'gpt-4o-mini')
+    return summary.trim()
+  } catch (error) {
+    console.error('Error generating summary:', error)
+    return `Discussion about ${subject}`
+  }
+}
+
+function calculateConfidence(
+  keywordCount: number,
+  partner: Entity | null,
+  customer: Entity | null
+): number {
+  let confidence = 0.3
+
+  confidence += Math.min(keywordCount * 0.1, 0.3)
+
+  if (partner) {
+    confidence += partner.confidence * 0.2
+  }
+
+  if (customer) {
+    confidence += customer.confidence * 0.2
+  }
+
+  return Math.min(Math.round(confidence * 100) / 100, 1)
+}
