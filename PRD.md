@@ -12,42 +12,49 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 
 ## Essential Features
 
-### 1. Microsoft 365 Authentication
+### 1. Mock User Profile Selector (Testing Mode)
+- **Functionality**: Provides a visual interface to select from 6 pre-configured test user personas with different roles, access levels, and communication volumes, bypassing Azure AD authentication for development and testing
+- **Purpose**: Enable comprehensive testing of different user scenarios without requiring actual Azure AD app registration or live M365 accounts
+- **Trigger**: User clicks on their profile badge in the header, or on app launch when no user is selected
+- **Progression**: Display user selector grid → Show 6 personas with avatars, roles, departments, and descriptions → User selects persona → Profile stored in KV → User badge updates → Toast confirmation → App continues with selected user context
+- **Success criteria**: Users can easily switch between test personas, selection persists across sessions, each persona displays unique metadata (access level, communication volume), clear indication that testing mode is active
+
+### 2. Microsoft 365 Authentication
 - **Functionality**: Secure authentication with Microsoft 365 using MSAL (Microsoft Authentication Library) with popup-based OAuth 2.0 flow
 - **Purpose**: Establish secure, delegated access to user's M365 communications (emails, chats, meeting transcripts)
 - **Trigger**: User opens app without existing authentication
 - **Progression**: Display sign-in screen → User clicks "Sign in with Microsoft" → Azure AD popup authentication → User consents to permissions (Mail.Read, Chat.Read, OnlineMeetings.Read, CallRecords.Read) → Token stored securely → Access granted
 - **Success criteria**: Users can successfully authenticate, tokens are securely stored and automatically refreshed, clear permission explanations provided
 
-### 2. Communication Scanner
+### 3. Communication Scanner
 - **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters, date range presets, and incremental scanning that only processes new communications since the last scan
 - **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise, while reducing scan time and API calls through intelligent incremental scanning
 - **Trigger**: User clicks "Scan Communications" after authentication or sets up automatic periodic scanning
 - **Progression**: Select data sources → Choose date preset or custom range → Enable/disable incremental scan → Customize keyword filters → Apply filters → Graph API fetches only new communications since last scan (if enabled) → AI processes communications → Results displayed with confidence scores → Scan timestamps updated for next incremental scan
 - **Success criteria**: Successfully retrieves real M365 data, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges; incremental scanning reduces scan time by 50-80% for subsequent scans
 
-### 2. Entity Extraction Engine
+### 3. Entity Extraction Engine
 - **Functionality**: Uses AI (GPT-4o-mini via Spark LLM API) and pattern recognition to extract partner names, customer accounts, and opportunity details from real communication content retrieved from Microsoft Graph
 - **Purpose**: Automatically populate CRM fields without manual data entry by analyzing actual email, chat, and meeting transcript content
 - **Trigger**: Runs automatically on filtered communications retrieved from Graph API
 - **Progression**: Receive communications from Graph API → AI analyzes message content → Identify entities (partners, customers) → Extract key details (deal size, timeline) → Map to CRM schema → Generate confidence scores
 - **Success criteria**: Correctly extracts partner and customer names with 85%+ accuracy from real M365 communications
 
-### 3. CRM Opportunity Matching
+### 4. CRM Opportunity Matching
 - **Functionality**: Cross-references detected communications with existing Dynamics 365 opportunities
 - **Purpose**: Prevent duplicate entries and intelligently link new partner engagements to existing opportunities
 - **Trigger**: After entity extraction completes
 - **Progression**: Query CRM for customer → Check existing opportunities → Verify partner associations → Flag new vs. update scenarios
 - **Success criteria**: 100% accurate matching against existing CRM records, zero duplicate opportunity creation
 
-### 4. Review & Confirmation Interface
+### 5. Review & Confirmation Interface
 - **Functionality**: Presents detected co-sell interactions in an organized, reviewable format with edit capabilities
 - **Purpose**: Give users full control and transparency before committing data to CRM
 - **Trigger**: After CRM matching completes
 - **Progression**: Display detected interactions → Show extracted entities → Highlight CRM action (create/update) → User reviews/edits → Batch confirm or individual approve → Sync to CRM
 - **Success criteria**: Users can review, edit, and confirm/reject all detected opportunities within 2 minutes
 
-### 4. AI Conversation Summarization
+### 5. AI Conversation Summarization
 - **Functionality**: Uses GPT-4o-mini to generate natural language summaries of email threads, chat conversations, and meeting transcripts retrieved from Microsoft Graph
 - **Purpose**: Help users quickly understand context without reading full message history from their actual M365 communications
 - **Trigger**: Automatically generated for each detected co-sell interaction from Graph API data
@@ -84,6 +91,10 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 
 ## Edge Case Handling
 
+- **No User Selected on Launch**: Automatically show user selector modal and pre-select default user (Sarah Chen)
+- **User Profile Deleted from Storage**: Fall back to default user and show notification
+- **Switching Users Mid-Scan**: Preserve scan state but warn user that results are tied to previous user context
+- **User Access Level Restrictions**: Future feature - show disabled UI for features above user's access level (e.g., admin-only dashboards)
 - **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range, or check Microsoft Graph API permissions
 - **Graph API Permission Denied**: Show clear error message with link to GRAPH_API_SETUP.md documentation and admin consent instructions
 - **Graph API Rate Limiting**: Implement exponential backoff and display progress when API calls are throttled
@@ -179,6 +190,8 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - **Switch**: Enable/disable scheduled exports without deletion, providing quick toggle functionality; also used for toggling incremental scanning on/off
 
 - **Customizations**:
+  - Custom UserProfileSelector full-screen modal with 3-column grid of persona cards
+  - Custom UserProfileBadge dropdown component showing current user with quick-switch option
   - Custom OpportunityCard component combining Card + Badge + actions with Microsoft-inspired layout
   - Custom ScanProgress component with animated stage indicators
   - Custom EntityChip component for extracted partner/customer names with confidence indicators
@@ -191,6 +204,13 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - Inputs: Focused with accent border and subtle glow, error with red border and message, success with green check
 
 - **Icon Selection**:
+  - User Profile: User
+  - Switch User: UserSwitch
+  - User Badge: User avatar emoji + CaretDown
+  - Access Level: Sparkle (for badges)
+  - Communication Volume: ChartBar (with weight variations)
+  - Department: Buildings
+  - Email: EnvelopeSimple
   - Scan/Search: MagnifyingGlass
   - Email: Envelope
   - Chat: ChatCircle

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -15,9 +15,12 @@ import { OpportunityCard } from '@/components/OpportunityCard'
 import { OpportunityDialog } from '@/components/OpportunityDialog'
 import { ExportDialog } from '@/components/ExportDialog'
 import { ScheduledExportsDialog } from '@/components/ScheduledExportsDialog'
+import { UserProfileSelector } from '@/components/UserProfileSelector'
+import { UserProfileBadge } from '@/components/UserProfileBadge'
 import { useScheduledExports } from '@/hooks/useScheduledExports'
 import { generateDashboardMetrics } from '@/lib/mockData'
 import { detectOpportunitiesFromGraphData } from '@/lib/opportunityDetectionService'
+import { getDefaultUser, getUserById, type MockUser } from '@/lib/mockUsers'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
 function App() {
@@ -31,8 +34,23 @@ function App() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [scheduledExportsDialogOpen, setScheduledExportsDialogOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [currentUser, setCurrentUser] = useKV<MockUser>('currentMockUser', getDefaultUser())
+  const [showUserSelector, setShowUserSelector] = useState(false)
   
   useScheduledExports(opportunities || [])
+  
+  useEffect(() => {
+    if (!currentUser) {
+      setCurrentUser(getDefaultUser())
+    }
+  }, [currentUser, setCurrentUser])
+  
+  const handleUserChange = (user: MockUser) => {
+    setCurrentUser(user)
+    toast.success('User profile changed', {
+      description: `Now testing as ${user.name} (${user.role})`
+    })
+  }
   
   const dashboardMetrics = generateDashboardMetrics()
   
@@ -172,6 +190,16 @@ function App() {
   const reviewOpportunities = (opportunities || []).filter(o => o.status === 'review')
   const confirmedOpportunities = (opportunities || []).filter(o => o.status === 'confirmed' || o.status === 'synced')
   
+  if (showUserSelector && currentUser) {
+    return (
+      <UserProfileSelector
+        selectedUser={currentUser}
+        onSelectUser={handleUserChange}
+        onClose={() => setShowUserSelector(false)}
+      />
+    )
+  }
+  
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
@@ -190,19 +218,27 @@ function App() {
                 </div>
               </div>
             
-            {opportunities && opportunities.length > 0 && (
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+            <div className="flex items-center gap-4">
+              {currentUser && (
+                <UserProfileBadge 
+                  user={currentUser} 
+                  onChangeUser={() => setShowUserSelector(true)} 
+                />
+              )}
+              
+              {opportunities && opportunities.length > 0 && (
+                <div className="text-right hidden md:block">
                   <p className="text-sm font-semibold">{opportunities.length}</p>
                   <p className="text-xs text-muted-foreground">Total Detected</p>
                 </div>
-                {newOpportunities.length > 0 && (
-                  <Badge className="bg-accent text-accent-foreground">
-                    {newOpportunities.length} New
-                  </Badge>
-                )}
-              </div>
-            )}
+              )}
+              
+              {newOpportunities.length > 0 && (
+                <Badge className="bg-accent text-accent-foreground hidden sm:flex">
+                  {newOpportunities.length} New
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </header>
