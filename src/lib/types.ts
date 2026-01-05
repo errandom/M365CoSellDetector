@@ -79,3 +79,23 @@ export interface ExportTemplate {
   createdAt: string
   updatedAt: string
 }
+
+export type ScheduleFrequency = 'daily' | 'weekly' | 'monthly'
+
+export type ScheduleDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+
+export interface ScheduledExport {
+  id: string
+  name: string
+  templateId: string
+  frequency: ScheduleFrequency
+  dayOfWeek?: ScheduleDay
+  dayOfMonth?: number
+  time: string
+  emailRecipients: string[]
+  enabled: boolean
+  lastRun?: string
+  nextRun: string
+  createdAt: string
+  updatedAt: string
+}

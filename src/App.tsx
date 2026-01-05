@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Toaster, toast } from 'sonner'
 import { 
-  ChartBar, MagnifyingGlass, Clock, Sparkle, CheckCircle, Download 
+  ChartBar, MagnifyingGlass, Clock as ClockIcon, Sparkle, CheckCircle, Download, CalendarCheck
 } from '@phosphor-icons/react'
 import { DashboardView } from '@/components/DashboardView'
 import { ScanView } from '@/components/ScanView'
@@ -13,6 +13,8 @@ import { ScanProgress } from '@/components/ScanProgress'
 import { OpportunityCard } from '@/components/OpportunityCard'
 import { OpportunityDialog } from '@/components/OpportunityDialog'
 import { ExportDialog } from '@/components/ExportDialog'
+import { ScheduledExportsDialog } from '@/components/ScheduledExportsDialog'
+import { useScheduledExports } from '@/hooks/useScheduledExports'
 import { generateDashboardMetrics, simulateAIScan } from '@/lib/mockData'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
@@ -25,7 +27,10 @@ function App() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<DetectedOpportunity | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [scheduledExportsDialogOpen, setScheduledExportsDialogOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  
+  useScheduledExports(opportunities || [])
   
   const dashboardMetrics = generateDashboardMetrics()
   
@@ -206,7 +211,7 @@ function App() {
               Scan
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2">
-              <Clock size={16} />
+              <ClockIcon size={16} />
               Results
               {newOpportunities.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
@@ -250,10 +255,16 @@ function App() {
                       {opportunities.length} total opportunities detected
                     </p>
                   </div>
-                  <Button onClick={() => setExportDialogOpen(true)} variant="outline">
-                    <Download size={16} />
-                    Export to Excel
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setScheduledExportsDialogOpen(true)} variant="outline">
+                      <CalendarCheck size={16} />
+                      Schedule Exports
+                    </Button>
+                    <Button onClick={() => setExportDialogOpen(true)} variant="outline">
+                      <Download size={16} />
+                      Export to Excel
+                    </Button>
+                  </div>
                 </div>
                 
                 {newOpportunities.length > 0 && (
@@ -320,6 +331,11 @@ function App() {
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
         opportunities={opportunities || []}
+      />
+      
+      <ScheduledExportsDialog
+        open={scheduledExportsDialogOpen}
+        onOpenChange={setScheduledExportsDialogOpen}
       />
       
       <Toaster position="top-right" />

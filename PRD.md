@@ -61,6 +61,13 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Progression**: Open export dialog → Select from 6+ built-in templates or create custom → Templates tab shows Executive Summary, Detailed Audit, Partner Performance, Review Queue, Email-Based, Meeting Insights → Configure additional filters (status, source type, date range, confidence, partners, customers) → Select columns to include → Preview filtered count → Save current configuration as new template → Export to Excel file with Summary sheet
 - **Success criteria**: Successfully exports filtered data to Excel with template presets, allows saving custom templates that persist between sessions, includes summary statistics sheet, and preserves original data formatting
 
+### 8. Scheduled Automatic Exports
+- **Functionality**: Set up recurring exports that automatically generate and deliver reports via email on a schedule (daily, weekly, monthly)
+- **Purpose**: Automate routine reporting workflows and ensure stakeholders receive updates without manual intervention
+- **Trigger**: User clicks "Schedule Exports" button and configures a new schedule
+- **Progression**: Open scheduled exports dialog → View existing schedules with status indicators → Click "New Schedule" → Enter schedule name → Select export template → Choose frequency (daily/weekly/monthly) → Set day and time → Add email recipients (one or more) → Enable/disable schedule → System runs exports automatically at scheduled times → Generates Excel file → Simulates email delivery to recipients → Updates last run and next run times → Users can edit, pause, or delete schedules
+- **Success criteria**: Successfully creates and persists schedules, executes exports at correct times (with 1-minute precision), generates proper Excel files using selected template, displays accurate next run calculations, allows enabling/disabling without deletion, validates all inputs before saving
+
 ## Edge Case Handling
 
 - **No Communications Found**: Display helpful empty state with suggestions to adjust filters or date range
@@ -78,6 +85,12 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 - **Template Name Conflicts**: Allow duplicate template names but append timestamp for uniqueness
 - **Deleted Template While Selected**: Clear selection and reset to default template state
 - **Template with Invalid Filters**: Validate filter compatibility before applying (e.g., no data matches template criteria)
+- **No Active Schedules**: Display helpful empty state encouraging users to create their first schedule
+- **Invalid Email Address**: Validate email format and show error before allowing addition to recipients list
+- **Schedule Time Already Passed Today**: Calculate next run for the following occurrence (tomorrow for daily, next week for weekly, etc.)
+- **Missing Template for Schedule**: Handle gracefully if a scheduled export references a deleted template, show warning in schedule list
+- **Multiple Schedules at Same Time**: Execute all scheduled exports that are due without conflicts
+- **Schedule Running During Export Dialog**: Allow simultaneous scheduled and manual exports without interference
 
 ## Design Direction
 
@@ -125,22 +138,23 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
 ## Component Selection
 
 - **Components**:
-  - **Card**: Primary container for detected co-sell opportunities with hover states and expandable details
+  - **Card**: Primary container for detected co-sell opportunities with hover states and expandable details; also used for displaying scheduled export entries
   - **Tabs**: Switch between Dashboard, Scan Results, History, and Settings views; also used for Filters/Columns in export dialog
-  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips and filter selection
-  - **Button**: Primary actions (Scan, Confirm, Edit, Sync, Export) with loading states; also preset buttons for date ranges
-  - **Input**: Text input for adding custom keywords with enter-to-add functionality; also range slider for confidence filtering
-  - **Dialog**: Full-screen review mode for individual opportunities with edit capabilities; export configuration dialog
+  - **Badge**: Status indicators (New, Review Needed, Confirmed, Synced) with color coding; also used for keyword chips, filter selection, and schedule status (Active/Paused)
+  - **Button**: Primary actions (Scan, Confirm, Edit, Sync, Export, Schedule Exports) with loading states; also preset buttons for date ranges
+  - **Input**: Text input for adding custom keywords with enter-to-add functionality; also range slider for confidence filtering, email address input for schedule recipients, time picker for schedule configuration, number input for day of month
+  - **Dialog**: Full-screen review mode for individual opportunities with edit capabilities; export configuration dialog; scheduled exports management dialog with split-pane layout
   - **Table**: Display communication source data and CRM matching results
   - **Progress**: Visual feedback during scanning and AI processing
-  - **Select/Dropdown**: Filter controls for date range, source type, partner selection
+  - **Select/Dropdown**: Filter controls for date range, source type, partner selection; template selection in export and schedule dialogs; frequency, day of week selection in schedules
   - **Calendar**: Date picker for custom date range selection in popovers; used for export date filtering
   - **Checkbox**: Batch selection for multi-confirm actions; column and filter selection in export dialog
   - **Textarea**: Edit extracted summaries and opportunity details
-  - **Separator**: Visual hierarchy between sections
-  - **Scroll Area**: Handle long lists of communications and opportunities; export dialog filter lists
+  - **Separator**: Visual hierarchy between sections; divider between schedule list and edit form
+  - **Scroll Area**: Handle long lists of communications and opportunities; export dialog filter lists; schedule list with many entries
   - **Accordion**: Expandable sections for email threads and chat histories
   - **Popover**: Date picker containers for export date range selection
+  - **Switch**: Enable/disable scheduled exports without deletion, providing quick toggle functionality
 
 - **Customizations**:
   - Custom OpportunityCard component combining Card + Badge + actions with Microsoft-inspired layout
@@ -175,6 +189,12 @@ Animations should reinforce the intelligent, responsive nature of the AI-powered
   - Add: Plus
   - Remove: X
   - Export: Download
+  - Schedule: CalendarCheck
+  - Edit Schedule: PencilSimple
+  - Delete Schedule: Trash
+  - Email Recipients: Envelope
+  - Next Run Time: CalendarBlank
+  - Toggle Schedule: Switch (component, not icon)
 
 - **Spacing**:
   - Section padding: 6 (1.5rem / 24px)
