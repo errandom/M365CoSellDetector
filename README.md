@@ -2,6 +2,18 @@
 
 An AI-powered Microsoft 365 integration that automatically detects co-sell opportunities by scanning your Outlook emails, Teams chats, and meeting transcripts.
 
+## ⚡ Quick Start
+
+**New to this app?** Follow these steps:
+
+1. **Register your app in Azure AD** - Follow [AZURE_AD_SETUP.md](./AZURE_AD_SETUP.md) (takes 10-15 minutes)
+2. **Configure environment** - Copy `.env.example` to `.env` and add your Azure AD credentials
+3. **Install and run** - Run `npm install` then `npm run dev`
+4. **Sign in** - Open http://localhost:5173 and sign in with your Microsoft 365 account
+5. **Start scanning** - Navigate to the Scan tab and detect opportunities from your communications
+
+**Need help?** See the [Azure AD Setup Guide](./AZURE_AD_SETUP.md) for detailed instructions and troubleshooting.
+
 ## 🚀 Features
 
 - **Microsoft 365 Authentication**: Secure OAuth 2.0 authentication with Azure AD using MSAL
@@ -33,18 +45,19 @@ An AI-powered Microsoft 365 integration that automatically detects co-sell oppor
 
 Before running the application, you must register it in Azure AD and configure the necessary permissions.
 
-**📖 See detailed setup instructions in [GRAPH_API_SETUP.md](./GRAPH_API_SETUP.md)**
+**📖 See detailed step-by-step instructions in [AZURE_AD_SETUP.md](./AZURE_AD_SETUP.md)**
 
-Quick steps:
+Quick overview:
 1. Go to [Azure Portal](https://portal.azure.com) → Azure AD → App Registrations
-2. Create new registration with redirect URI: `http://localhost:5173`
+2. Create new registration (Single-page application) with redirect URI: `http://localhost:5173`
 3. Add Microsoft Graph **delegated permissions**:
-   - `User.Read`
-   - `Mail.Read`
-   - `Chat.Read`
-   - `OnlineMeetings.Read`
-   - `CallRecords.Read`
-4. Grant admin consent
+   - `User.Read` - Read user profile
+   - `Mail.Read` - Read emails from Outlook
+   - `Chat.Read` - Read Teams chat messages
+   - `OnlineMeetings.Read` - Read online meetings
+   - `CallRecords.Read` - Read call records and transcripts
+4. Grant admin consent for all permissions
+5. Copy Application (client) ID and Directory (tenant) ID
 
 ### 2. Configure Environment Variables
 
@@ -200,7 +213,8 @@ User Authentication → Graph API → Communications Data → AI Analysis → Op
 
 ## 📚 Documentation
 
-- [Graph API Setup Guide](./GRAPH_API_SETUP.md) - Detailed Azure AD configuration
+- [Azure AD Setup Guide](./AZURE_AD_SETUP.md) - Complete step-by-step Azure AD app registration and configuration
+- [Graph API Integration Details](./GRAPH_API_SETUP.md) - Technical details about Graph API integration
 - [PRD.md](./PRD.md) - Product Requirements Document
 - [Microsoft Graph API Docs](https://docs.microsoft.com/en-us/graph/)
 - [MSAL.js Documentation](https://github.com/AzureAD/microsoft-authentication-library-for-js)

@@ -12,28 +12,28 @@ This is a multi-faceted enterprise application that involves scanning multiple c
 
 ## Essential Features
 
-### 1. Mock User Profile Selector (Testing Mode)
-- **Functionality**: Provides a visual interface to select from 6 pre-configured test user personas with different roles, access levels, communication volumes, and comprehensive profile data including communication patterns (preferred channels, message frequency, response times) and opportunity profiles (deal sizes, industries, solutions, conversion rates), bypassing Azure AD authentication for development and testing
-- **Purpose**: Enable comprehensive testing of different user scenarios without requiring actual Azure AD app registration or live M365 accounts, with role-specific mock data generation that creates realistic communications and opportunities tailored to each persona's profile
-- **Trigger**: User clicks on their profile badge in the header, or on app launch when no user is selected
-- **Progression**: Display user selector grid → Show 6 personas with avatars, roles, departments, descriptions, and detailed metrics (years experience, messages/day, opportunities/month, conversion rate, avg deal size, sales cycle) → User selects persona → Profile stored in KV → Graph service initialized with user context → User badge updates → Toast confirmation → App continues with selected user context → All subsequent scans generate role-appropriate mock data
-- **Success criteria**: Users can easily switch between test personas, selection persists across sessions, each persona displays comprehensive profile metadata (communication patterns, opportunity profile, experience level, territory, specialization), clear indication that testing mode is active, generated mock data reflects persona characteristics (e.g., Partner Managers see more casual communications with many partners, Junior Reps see smaller deals with formal style, VPs see strategic mega-deals with brief communications)
+### 1. Microsoft 365 Authentication
+- **Functionality**: Secure authentication with Microsoft 365 using MSAL (Microsoft Authentication Library) with popup-based OAuth 2.0 flow. Integrates directly with Azure AD to obtain delegated access tokens for Microsoft Graph API.
+- **Purpose**: Establish secure, delegated access to user's M365 communications (emails, chats, meeting transcripts) from their corporate environment
+- **Trigger**: User opens app without existing authentication, presented with sign-in screen
+- **Progression**: Display sign-in screen with permission preview → User clicks "Sign in with Microsoft" → Azure AD popup authentication → User enters M365 credentials (may require MFA) → User consents to requested permissions (User.Read, Mail.Read, Chat.Read, OnlineMeetings.Read, CallRecords.Read) → Access token issued and stored securely → User profile fetched from Graph API → App displays user photo, name, and job title → Access granted → User can sign out from profile menu
+- **Success criteria**: Users can successfully authenticate with their corporate M365 account, tokens are securely stored and automatically refreshed, clear permission explanations provided before consent, user profile displays correctly from Graph API, sign-out clears session cleanly, authentication errors provide actionable guidance
 
-### 2. Microsoft 365 Authentication
-- **Functionality**: Secure authentication with Microsoft 365 using MSAL (Microsoft Authentication Library) with popup-based OAuth 2.0 flow
-- **Purpose**: Establish secure, delegated access to user's M365 communications (emails, chats, meeting transcripts)
-- **Trigger**: User opens app without existing authentication
-- **Progression**: Display sign-in screen → User clicks "Sign in with Microsoft" → Azure AD popup authentication → User consents to permissions (Mail.Read, Chat.Read, OnlineMeetings.Read, CallRecords.Read) → Token stored securely → Access granted
-- **Success criteria**: Users can successfully authenticate, tokens are securely stored and automatically refreshed, clear permission explanations provided
+### 2. Real User Profile Display
+- **Functionality**: Fetches and displays the authenticated user's profile from Microsoft Graph API including display name, email, job title, department, office location, and profile photo
+- **Purpose**: Provide clear indication of which M365 account is currently authenticated and show relevant user information from the corporate directory
+- **Trigger**: Automatically fetched after successful authentication
+- **Progression**: User authenticates → App requests /me endpoint from Graph API → Profile data received (name, email, title, department, location) → Profile photo fetched from /me/photo/$value → User badge rendered with avatar and info → Clicking badge shows dropdown with full details and sign-out option
+- **Success criteria**: Profile loads within 2 seconds of authentication, photo displays if available (graceful fallback to initials), all profile fields shown when available, user can access sign-out from dropdown menu
 
-### 3. Communication Scanner
-- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails, Teams chats, and meeting transcripts from user's M365 environment with customizable keyword filters, date range presets, and incremental scanning that only processes new communications since the last scan. In testing mode (authentication suspended), generates role-specific mock communications tailored to each user persona's profile (communication patterns, preferred channels, email style, industry focus, solution areas, partner types) creating realistic, persona-appropriate emails, chats, and meeting transcripts
-- **Purpose**: Automatically surface partner collaboration opportunities from actual communications that would otherwise be buried in communication noise, while reducing scan time and API calls through intelligent incremental scanning. In testing mode, provide realistic, diverse mock data for each user role to demonstrate system capabilities across different co-sell scenarios
-- **Trigger**: User clicks "Scan Communications" after authentication or sets up automatic periodic scanning
-- **Progression**: Select data sources → Choose date preset or custom range → Enable/disable incremental scan → Customize keyword filters → Apply filters → Graph API fetches only new communications since last scan (if enabled) OR generates role-specific mock data based on current user persona → AI processes communications → Results displayed with confidence scores → Scan timestamps updated for next incremental scan
-- **Success criteria**: Successfully retrieves real M365 data OR generates realistic mock data appropriate to user role, identifies 90%+ of genuine co-sell discussions with <10% false positive rate; users can easily add/remove keywords and select common date ranges; incremental scanning reduces scan time by 50-80% for subsequent scans; mock data reflects persona characteristics (high-volume users get more communications, Partner Managers get partner-focused content, technical roles get architecture discussions, junior roles get smaller deals, executives get strategic briefings)
+### 3. Communication Scanner (Real Graph API Integration)
+- **Functionality**: Integrates with Microsoft Graph API to retrieve real emails from Outlook, Teams chats, and meeting transcripts from the authenticated user's M365 corporate environment with customizable keyword filters, date range presets, and incremental scanning that only processes new communications since the last scan
+- **Purpose**: Automatically surface partner collaboration opportunities from actual corporate communications that would otherwise be buried in communication noise, while reducing scan time and API calls through intelligent incremental scanning
+- **Trigger**: User clicks "Start Scan" in the Scan tab after authentication
+- **Progression**: User configures scan (data sources, date range, keywords, incremental mode) → Click "Start Scan" → App obtains fresh access token → Graph API calls initiated → /me/messages endpoint for emails (with date filter) → /me/chats and /me/chats/{id}/messages for Teams chats → /me/onlineMeetings and /me/onlineMeetings/{id}/transcripts for meeting transcripts → Keyword filtering applied to results → AI processes communications → Opportunities extracted and displayed → Scan timestamps updated for next incremental scan
+- **Success criteria**: Successfully retrieves real M365 data from corporate environment, identifies 90%+ of genuine co-sell discussions with <10% false positive rate, users can easily add/remove keywords and select common date ranges, incremental scanning reduces scan time by 50-80% for subsequent scans, handles API errors gracefully with actionable error messages, respects Graph API rate limits
 
-### 3. Entity Extraction Engine
+### 4. Entity Extraction Engine
 - **Functionality**: Uses AI (GPT-4o-mini via Spark LLM API) and pattern recognition to extract partner names, customer accounts, and opportunity details from real communication content retrieved from Microsoft Graph
 - **Purpose**: Automatically populate CRM fields without manual data entry by analyzing actual email, chat, and meeting transcript content
 - **Trigger**: Runs automatically on filtered communications retrieved from Graph API

@@ -15,13 +15,10 @@ import { OpportunityCard } from '@/components/OpportunityCard'
 import { OpportunityDialog } from '@/components/OpportunityDialog'
 import { ExportDialog } from '@/components/ExportDialog'
 import { ScheduledExportsDialog } from '@/components/ScheduledExportsDialog'
-import { UserProfileSelector } from '@/components/UserProfileSelector'
-import { UserProfileBadge } from '@/components/UserProfileBadge'
+import { RealUserProfileBadge } from '@/components/RealUserProfileBadge'
 import { useScheduledExports } from '@/hooks/useScheduledExports'
 import { generateDashboardMetrics } from '@/lib/mockData'
 import { detectOpportunitiesFromGraphData } from '@/lib/opportunityDetectionService'
-import { getDefaultUser, getUserById, type MockUser } from '@/lib/mockUsers'
-import { graphService } from '@/lib/graphService'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
 function App() {
@@ -35,35 +32,11 @@ function App() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [scheduledExportsDialogOpen, setScheduledExportsDialogOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [currentUser, setCurrentUser] = useKV<MockUser>('currentMockUser', getDefaultUser())
-  const [showUserSelector, setShowUserSelector] = useState(false)
-  const [isUserInitialized, setIsUserInitialized] = useState(false)
-  
-  const effectiveUser = (currentUser && currentUser.opportunityProfile) ? currentUser : getDefaultUser()
   
   useScheduledExports(opportunities || [])
   
-  useEffect(() => {
-    if (effectiveUser && effectiveUser.opportunityProfile) {
-      graphService.setCurrentUser(effectiveUser)
-      setIsUserInitialized(true)
-    } else {
-      console.error('Effective user is invalid:', effectiveUser)
-      const defaultUser = getDefaultUser()
-      if (defaultUser && defaultUser.opportunityProfile) {
-        setCurrentUser(defaultUser)
-        graphService.setCurrentUser(defaultUser)
-        setIsUserInitialized(true)
-      }
-    }
-  }, [effectiveUser])
-  
-  const handleUserChange = (user: MockUser) => {
-    setCurrentUser(user)
-    graphService.setCurrentUser(user)
-    toast.success('User profile changed', {
-      description: `Now testing as ${user.name} (${user.role})`
-    })
+  const handleSignOut = () => {
+    window.location.reload()
   }
   
   const dashboardMetrics = generateDashboardMetrics()
@@ -74,13 +47,6 @@ function App() {
     keywords: string[]
     useIncrementalScan: boolean
   }) => {
-    if (!isUserInitialized || !effectiveUser || !effectiveUser.opportunityProfile) {
-      toast.error('User not initialized', {
-        description: 'Please wait for the user profile to load before scanning'
-      })
-      return
-    }
-    
     setIsScanning(true)
     setActiveTab('results')
     
@@ -211,16 +177,6 @@ function App() {
   const reviewOpportunities = (opportunities || []).filter(o => o.status === 'review')
   const confirmedOpportunities = (opportunities || []).filter(o => o.status === 'confirmed' || o.status === 'synced')
   
-  if (showUserSelector) {
-    return (
-      <UserProfileSelector
-        selectedUser={effectiveUser}
-        onSelectUser={handleUserChange}
-        onClose={() => setShowUserSelector(false)}
-      />
-    )
-  }
-  
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
@@ -240,10 +196,7 @@ function App() {
               </div>
             
             <div className="flex items-center gap-4">
-              <UserProfileBadge 
-                user={effectiveUser} 
-                onChangeUser={() => setShowUserSelector(true)} 
-              />
+              <RealUserProfileBadge onSignOut={handleSignOut} />
               
               {opportunities && opportunities.length > 0 && (
                 <div className="text-right hidden md:block">
