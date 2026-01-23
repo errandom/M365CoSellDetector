@@ -1,5 +1,3 @@
-import { Client } from '@microsoft/microsoft-graph-client'
-import { authService } from './authService'
 import type { CommunicationType } from './types'
 import type { MockUser } from './mockUsers'
 import { generateCommunicationsForUser } from './mockDataGenerator'
@@ -29,23 +27,10 @@ export interface MeetingTranscript {
 }
 
 class GraphService {
-  private client: Client | null = null
   private currentUser: MockUser | null = null
 
   setCurrentUser(user: MockUser): void {
     this.currentUser = user
-  }
-
-  private async getClient(): Promise<Client> {
-    if (!this.client) {
-      const accessToken = await authService.getAccessToken()
-      this.client = Client.init({
-        authProvider: (done) => {
-          done(null, accessToken)
-        },
-      })
-    }
-    return this.client
   }
 
   async getEmails(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<EmailMessage[]> {
@@ -192,10 +177,6 @@ class GraphService {
     }
 
     return results
-  }
-
-  clearClient(): void {
-    this.client = null
   }
 }
 
