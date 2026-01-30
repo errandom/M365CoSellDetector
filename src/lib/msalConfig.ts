@@ -39,7 +39,7 @@ export const loginRequest = {
     'Mail.Read',
     'Chat.Read',
     'OnlineMeetings.Read',
-    'CallRecords.Read'
+    // 'CallRecords.Read' // Temporarily disabled - requires admin consent
   ],
 }
 
