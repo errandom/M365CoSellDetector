@@ -9,9 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { CaretDown, SignOut, User as UserIcon } from '@phosphor-icons/react'
+import { CaretDown, SignOut } from '@phosphor-icons/react'
 import { authService } from '@/lib/authService'
-import { Client } from '@microsoft/microsoft-graph-client'
 import { toast } from 'sonner'
 
 interface GraphUserProfile {
@@ -36,19 +35,38 @@ export function RealUserProfileBadge({ onSignOut }: RealUserProfileBadgeProps) {
     const fetchUserProfile = async () => {
       try {
         const token = await authService.getAccessToken()
-        const client = Client.init({
-          authProvider: (done) => {
-            done(null, token)
-          },
-        })
-
-        const profile = await client.api('/me').select('displayName,mail,userPrincipalName,jobTitle,department,officeLocation').get()
+        
+        const profileResponse = await fetch(
+          'https://graph.microsoft.com/v1.0/me?$select=displayName,mail,userPrincipalName,jobTitle,department,officeLocation',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to fetch profile')
+        }
+        
+        const profile = await profileResponse.json()
         setUserProfile(profile)
 
         try {
-          const photoBlob = await client.api('/me/photo/$value').get()
-          const url = URL.createObjectURL(photoBlob)
-          setPhotoUrl(url)
+          const photoResponse = await fetch(
+            'https://graph.microsoft.com/v1.0/me/photo/$value',
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+          
+          if (photoResponse.ok) {
+            const photoBlob = await photoResponse.blob()
+            const url = URL.createObjectURL(photoBlob)
+            setPhotoUrl(url)
+          }
         } catch (photoError) {
           console.warn('Failed to fetch user photo:', photoError)
         }

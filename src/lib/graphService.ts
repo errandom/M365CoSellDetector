@@ -1,4 +1,3 @@
-import { Client } from '@microsoft/microsoft-graph-client'
 import { authService } from './authService'
 import type { CommunicationType } from './types'
 import type { MockUser } from './mockUsers'
@@ -30,22 +29,37 @@ export interface MeetingTranscript {
 
 class GraphService {
   private currentUser: MockUser | null = null
-  private graphClient: Client | null = null
+  private accessToken: string | null = null
 
   setCurrentUser(user: MockUser): void {
     this.currentUser = user
   }
 
-  private async getGraphClient(): Promise<Client> {
-    if (!this.graphClient) {
-      const token = await authService.getAccessToken()
-      this.graphClient = Client.init({
-        authProvider: (done) => {
-          done(null, token)
-        },
-      })
+  private async getAccessToken(): Promise<string> {
+    if (!this.accessToken) {
+      this.accessToken = await authService.getAccessToken()
     }
-    return this.graphClient
+    return this.accessToken
+  }
+
+  private async graphRequest(endpoint: string, options?: RequestInit): Promise<any> {
+    const token = await this.getAccessToken()
+    const response = await fetch(`https://graph.microsoft.com/v1.0${endpoint}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    })
+
+    if (!response.ok) {
+      const error: any = new Error(`Graph API request failed: ${response.statusText}`)
+      error.statusCode = response.status
+      throw error
+    }
+
+    return response.json()
   }
 
   private formatDateForGraph(date: Date): string {
@@ -54,17 +68,14 @@ class GraphService {
 
   async getEmails(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<EmailMessage[]> {
     try {
-      const client = await this.getGraphClient()
       const effectiveStartDate = lastScanDate && lastScanDate > startDate ? lastScanDate : startDate
       
       const filter = `receivedDateTime ge ${this.formatDateForGraph(effectiveStartDate)} and receivedDateTime le ${this.formatDateForGraph(endDate)}`
+      const select = 'id,subject,from,receivedDateTime,bodyPreview,body'
       
-      const response = await client
-        .api('/me/messages')
-        .filter(filter)
-        .select('id,subject,from,receivedDateTime,bodyPreview,body')
-        .top(1000)
-        .get()
+      const response = await this.graphRequest(
+        `/me/messages?$filter=${encodeURIComponent(filter)}&$select=${select}&$top=1000`
+      )
 
       return response.value.map((email: any) => ({
         id: email.id,
@@ -90,24 +101,19 @@ class GraphService {
 
   async getChats(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<ChatMessage[]> {
     try {
-      const client = await this.getGraphClient()
       const effectiveStartDate = lastScanDate && lastScanDate > startDate ? lastScanDate : startDate
       
-      const chatsResponse = await client
-        .api('/me/chats')
-        .select('id,topic,createdDateTime')
-        .top(50)
-        .get()
+      const chatsResponse = await this.graphRequest(
+        '/me/chats?$select=id,topic,createdDateTime&$top=50'
+      )
 
       const allMessages: ChatMessage[] = []
 
       for (const chat of chatsResponse.value) {
         try {
-          const messagesResponse = await client
-            .api(`/me/chats/${chat.id}/messages`)
-            .select('id,from,createdDateTime,body')
-            .top(100)
-            .get()
+          const messagesResponse = await this.graphRequest(
+            `/me/chats/${chat.id}/messages?$select=id,from,createdDateTime,body&$top=100`
+          )
 
           const filteredMessages = messagesResponse.value
             .filter((msg: any) => {
@@ -145,31 +151,27 @@ class GraphService {
 
   async getMeetingTranscripts(startDate: Date, endDate: Date, lastScanDate?: Date): Promise<MeetingTranscript[]> {
     try {
-      const client = await this.getGraphClient()
       const effectiveStartDate = lastScanDate && lastScanDate > startDate ? lastScanDate : startDate
       
       const filter = `startDateTime ge ${this.formatDateForGraph(effectiveStartDate)} and startDateTime le ${this.formatDateForGraph(endDate)}`
       
-      const meetingsResponse = await client
-        .api('/me/onlineMeetings')
-        .filter(filter)
-        .select('id,subject,startDateTime')
-        .top(100)
-        .get()
+      const meetingsResponse = await this.graphRequest(
+        `/me/onlineMeetings?$filter=${encodeURIComponent(filter)}&$select=id,subject,startDateTime&$top=100`
+      )
 
       const transcripts: MeetingTranscript[] = []
 
       for (const meeting of meetingsResponse.value) {
         try {
-          const transcriptsResponse = await client
-            .api(`/me/onlineMeetings/${meeting.id}/transcripts`)
-            .get()
+          const transcriptsResponse = await this.graphRequest(
+            `/me/onlineMeetings/${meeting.id}/transcripts`
+          )
 
           for (const transcript of transcriptsResponse.value) {
             try {
-              const contentResponse = await client
-                .api(`/me/onlineMeetings/${meeting.id}/transcripts/${transcript.id}/content`)
-                .get()
+              const contentResponse = await this.graphRequest(
+                `/me/onlineMeetings/${meeting.id}/transcripts/${transcript.id}/content`
+              )
 
               transcripts.push({
                 id: transcript.id,
