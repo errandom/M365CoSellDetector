@@ -37,9 +37,10 @@ export const loginRequest = {
   scopes: [
     'User.Read',
     'Mail.Read',
-    'Chat.Read',
-    'OnlineMeetings.Read',
-    // 'CallRecords.Read' // Temporarily disabled - requires admin consent
+    // The following scopes require admin consent:
+    // 'Chat.Read',
+    // 'OnlineMeetings.Read',
+    // 'CallRecords.Read'
   ],
 }
 
