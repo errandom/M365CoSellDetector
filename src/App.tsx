@@ -32,6 +32,7 @@ function App() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [scheduledExportsDialogOpen, setScheduledExportsDialogOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isDemoMode, setIsDemoMode] = useState(false)
   
   useScheduledExports(opportunities || [])
   
@@ -178,7 +179,7 @@ function App() {
   const confirmedOpportunities = (opportunities || []).filter(o => o.status === 'confirmed' || o.status === 'synced')
   
   return (
-    <AuthGuard>
+    <AuthGuard onDemoMode={() => setIsDemoMode(true)}>
       <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-card sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
@@ -193,10 +194,15 @@ function App() {
                     AI-Powered Partner Opportunity Detection
                   </p>
                 </div>
+                {isDemoMode && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50">
+                    Demo Mode
+                  </Badge>
+                )}
               </div>
             
             <div className="flex items-center gap-4">
-              <RealUserProfileBadge onSignOut={handleSignOut} />
+              {!isDemoMode && <RealUserProfileBadge onSignOut={handleSignOut} />}
               
               {opportunities && opportunities.length > 0 && (
                 <div className="text-right hidden md:block">
