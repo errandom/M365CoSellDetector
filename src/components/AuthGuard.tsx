@@ -95,13 +95,13 @@ export function AuthGuard({ children, onDemoMode }: AuthGuardProps) {
                   <Envelope size={20} className="text-primary" weight="duotone" />
                   <span>Your Outlook emails</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <ChatCircle size={20} className="text-primary" weight="duotone" />
-                  <span>Your Teams chat messages</span>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground opacity-50">
+                  <ChatCircle size={20} className="text-muted-foreground" weight="duotone" />
+                  <span>Teams chats (requires admin consent)</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <VideoCamera size={20} className="text-primary" weight="duotone" />
-                  <span>Your meeting transcripts</span>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground opacity-50">
+                  <VideoCamera size={20} className="text-muted-foreground" weight="duotone" />
+                  <span>Meeting transcripts (requires admin consent)</span>
                 </div>
               </div>
             </div>
