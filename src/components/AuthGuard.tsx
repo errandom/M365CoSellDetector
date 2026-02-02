@@ -2,17 +2,19 @@ import { useEffect, useState } from 'react'
 import { authService } from '@/lib/authService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ShieldCheck, Envelope, ChatCircle, VideoCamera, SignIn } from '@phosphor-icons/react'
+import { ShieldCheck, Envelope, ChatCircle, VideoCamera, SignIn, Play } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface AuthGuardProps {
   children: React.ReactNode
+  onDemoMode?: () => void
 }
 
-export function AuthGuard({ children }: AuthGuardProps) {
+export function AuthGuard({ children, onDemoMode }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDemoMode, setIsDemoMode] = useState(false)
 
   useEffect(() => {
     const initAuth = async () => {
@@ -52,6 +54,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }
 
+  const handleDemoMode = () => {
+    setIsDemoMode(true)
+    onDemoMode?.()
+    toast.info('Demo Mode Enabled', {
+      description: 'Using sample data. Connect your M365 account for real data.'
+    })
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -63,7 +73,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isDemoMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
@@ -112,7 +122,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
             </div>
           </CardContent>
 
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-3">
             <Button 
               className="w-full" 
               size="lg" 
@@ -122,6 +132,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
               <SignIn size={20} weight="duotone" />
               Sign in with Microsoft
             </Button>
+            <div className="relative w-full">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">or</span>
+              </div>
+            </div>
+            <Button 
+              className="w-full" 
+              variant="outline"
+              size="lg" 
+              onClick={handleDemoMode}
+              disabled={isLoading}
+            >
+              <Play size={20} weight="duotone" />
+              Continue with Demo Data
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Demo mode uses sample data to explore the app without connecting your account
+            </p>
           </CardFooter>
         </Card>
       </div>
