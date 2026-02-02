@@ -37,12 +37,13 @@ export const loginRequest = {
   scopes: [
     'User.Read',
     'Mail.Read',
-    // The following scopes require admin consent:
-    // 'Chat.Read',
-    // 'OnlineMeetings.Read',
-    // 'CallRecords.Read'
   ],
 }
+
+// Additional scopes that require admin consent (enable when granted):
+// 'Chat.Read' - Read Teams chat messages
+// 'OnlineMeetings.Read' - Read meeting information
+// 'CallRecords.Read' - Read call records
 
 export const graphConfig = {
   graphMeEndpoint: 'https://graph.microsoft.com/v1.0/me',
