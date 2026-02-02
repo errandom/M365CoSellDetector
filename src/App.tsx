@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Toaster, toast } from 'sonner'
 import { 
-  ChartBar, MagnifyingGlass, Clock as ClockIcon, Sparkle, CheckCircle, Download, CalendarCheck
+  ChartBar, MagnifyingGlass, Clock as ClockIcon, Sparkle, CheckCircle, Download, CalendarCheck, SignIn
 } from '@phosphor-icons/react'
 import { AuthGuard } from '@/components/AuthGuard'
 import { DashboardView } from '@/components/DashboardView'
@@ -37,6 +37,11 @@ function App() {
   useScheduledExports(opportunities || [])
   
   const handleSignOut = () => {
+    window.location.reload()
+  }
+  
+  const handleExitDemoMode = () => {
+    setIsDemoMode(false)
     window.location.reload()
   }
   
@@ -202,6 +207,12 @@ function App() {
               </div>
             
             <div className="flex items-center gap-4">
+              {isDemoMode && (
+                <Button variant="outline" size="sm" onClick={handleExitDemoMode}>
+                  <SignIn size={16} weight="duotone" />
+                  Sign in with Microsoft
+                </Button>
+              )}
               {!isDemoMode && <RealUserProfileBadge onSignOut={handleSignOut} />}
               
               {opportunities && opportunities.length > 0 && (
