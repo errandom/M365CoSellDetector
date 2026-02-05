@@ -14,9 +14,9 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Envelope, ChatCircle, Video, Handshake, Buildings, 
-  CheckCircle, XCircle, Calendar, CurrencyDollar 
+  CheckCircle, XCircle, Calendar, CurrencyDollar, Cube 
 } from '@phosphor-icons/react'
-import type { DetectedOpportunity } from '@/lib/types'
+import type { DetectedOpportunity, SolutionArea } from '@/lib/types'
 import { useState } from 'react'
 
 interface OpportunityDialogProps {
@@ -37,6 +37,15 @@ const typeLabels = {
   email: 'Email',
   chat: 'Teams Chat',
   meeting: 'Teams Meeting'
+}
+
+const solutionAreaLabels: Record<SolutionArea, string> = {
+  'azure-migration': 'Azure Migration',
+  'modern-workplace': 'Modern Workplace',
+  'security': 'Security',
+  'data-ai': 'Data & AI',
+  'app-modernization': 'App Modernization',
+  'infrastructure': 'Infrastructure'
 }
 
 export function OpportunityDialog({ 
@@ -74,7 +83,7 @@ export function OpportunityDialog({
             <span>{opportunity.communication.subject}</span>
           </DialogTitle>
           <DialogDescription>
-            Review and edit the detected co-sell opportunity before syncing to CRM
+            Review and edit the detected partner engagement before syncing to MSX
           </DialogDescription>
         </DialogHeader>
         
@@ -128,6 +137,15 @@ export function OpportunityDialog({
                     </Badge>
                   </div>
                 )}
+                {opportunity.solutionArea && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-lg border border-secondary/20">
+                    <Cube size={16} className="text-secondary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Solution</p>
+                      <p className="text-sm font-medium">{solutionAreaLabels[opportunity.solutionArea]}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -143,27 +161,33 @@ export function OpportunityDialog({
                 className="font-secondary"
               />
               <p className="text-xs text-muted-foreground mt-1.5">
-                Edit the summary if needed before syncing to CRM
+                Edit the summary if needed before syncing to MSX
               </p>
             </div>
             
             <Separator />
             
             <div>
-              <h4 className="font-semibold text-sm mb-2">CRM Action</h4>
+              <h4 className="font-semibold text-sm mb-2">MSX Action</h4>
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm">
                   <span className="font-medium">Action: </span>
-                  <span className="text-accent">
-                    {opportunity.crmAction === 'create' && 'Create new opportunity'}
-                    {opportunity.crmAction === 'update' && 'Update existing opportunity'}
-                    {opportunity.crmAction === 'link' && 'Link partner to opportunity'}
+                  <span className={opportunity.crmAction === 'already_linked' ? 'text-muted-foreground' : 'text-accent'}>
+                    {opportunity.crmAction === 'create' && 'Create new MSX opportunity'}
+                    {opportunity.crmAction === 'link' && 'Link partner to existing opportunity'}
+                    {opportunity.crmAction === 'already_linked' && 'Already linked in MSX'}
                   </span>
                 </p>
-                {opportunity.existingOpportunityId && (
+                {(opportunity.existingOpportunityName || opportunity.existingOpportunityId) && (
                   <p className="text-sm mt-1">
-                    <span className="font-medium">Opportunity ID: </span>
-                    <span className="text-muted-foreground">{opportunity.existingOpportunityId}</span>
+                    <span className="font-medium">Existing Opportunity: </span>
+                    <span className="text-muted-foreground">{opportunity.existingOpportunityName || opportunity.existingOpportunityId}</span>
+                  </p>
+                )}
+                {opportunity.existingReferralId && (
+                  <p className="text-sm mt-1">
+                    <span className="font-medium">Referral ID: </span>
+                    <span className="text-muted-foreground">{opportunity.existingReferralId}</span>
                   </p>
                 )}
               </div>
