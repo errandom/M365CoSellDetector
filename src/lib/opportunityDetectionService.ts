@@ -1,5 +1,6 @@
 import { graphService, type EmailMessage, type ChatMessage, type MeetingTranscript } from './graphService'
 import { scanHistoryService } from './scanHistoryService'
+import { msxService } from './msxService'
 import type { DetectedOpportunity, Communication, Entity, CommunicationType } from './types'
 
 export async function detectOpportunitiesFromGraphData(
@@ -67,8 +68,12 @@ export async function detectOpportunitiesFromGraphData(
       }
     }
 
-    onProgress?.('Analyzing opportunities with AI...', 90)
+    onProgress?.('Analyzing opportunities with AI...', 85)
     await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Cross-validate with MSX to check for existing opportunities
+    onProgress?.('Cross-validating with MSX...', 92)
+    await crossValidateWithMSX(opportunities)
 
     const scanEndDate = new Date()
     for (const source of sources) {
@@ -315,4 +320,63 @@ function calculateConfidence(
   }
 
   return Math.min(Math.round(confidence * 100) / 100, 1)
+}
+
+/**
+ * Cross-validate detected opportunities against MSX (Dynamics 365)
+ * to identify existing opportunities vs new ones
+ */
+async function crossValidateWithMSX(opportunities: DetectedOpportunity[]): Promise<void> {
+  // Cache for customer lookups to avoid duplicate API calls
+  const customerCache = new Map<string, { found: boolean; opportunityId?: string; opportunityName?: string }>()
+
+  for (const opportunity of opportunities) {
+    // Skip if no customer identified
+    if (!opportunity.customer?.name) {
+      continue
+    }
+
+    const customerName = opportunity.customer.name
+
+    // Check cache first
+    if (customerCache.has(customerName)) {
+      const cached = customerCache.get(customerName)!
+      if (cached.found && cached.opportunityId) {
+        opportunity.crmAction = 'update'
+        opportunity.existingOpportunityId = cached.opportunityId
+      }
+      continue
+    }
+
+    try {
+      // Query MSX for existing opportunities for this customer
+      const msxResult = await msxService.checkExistingOpportunities(customerName)
+
+      if (msxResult.found && msxResult.opportunities.length > 0) {
+        // Found existing opportunity - mark for update
+        const existingOpp = msxResult.opportunities[0] // Use most recent
+        opportunity.crmAction = 'update'
+        opportunity.existingOpportunityId = existingOpp.opportunityid
+
+        // Cache the result
+        customerCache.set(customerName, {
+          found: true,
+          opportunityId: existingOpp.opportunityid,
+          opportunityName: existingOpp.name,
+        })
+
+        console.info(`MSX Match: "${customerName}" -> Existing opportunity: ${existingOpp.name}`)
+      } else {
+        // No existing opportunity - will create new
+        opportunity.crmAction = 'create'
+        customerCache.set(customerName, { found: false })
+        
+        console.info(`MSX: No existing opportunity found for "${customerName}" - will create new`)
+      }
+    } catch (error) {
+      console.warn(`MSX lookup failed for customer "${customerName}":`, error)
+      // On error, default to create action
+      customerCache.set(customerName, { found: false })
+    }
+  }
 }
