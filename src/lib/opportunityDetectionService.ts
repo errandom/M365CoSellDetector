@@ -375,6 +375,20 @@ function calculateConfidence(
  * to identify existing opportunities and partner engagement status
  */
 async function crossValidateWithMSX(opportunities: DetectedOpportunity[]): Promise<void> {
+  // Test MSX connection first - if not available, skip cross-validation
+  let msxAvailable = false
+  try {
+    msxAvailable = await msxService.testConnection()
+  } catch {
+    console.info('MSX connection not available - skipping cross-validation')
+    return
+  }
+
+  if (!msxAvailable) {
+    console.info('MSX not connected - skipping cross-validation')
+    return
+  }
+
   // Cache for customer+partner lookups to avoid duplicate API calls
   const customerCache = new Map<string, { 
     found: boolean
