@@ -315,8 +315,14 @@ export function generateOpportunitiesForUser(
       keywords: foundKeywords,
       confidence: Math.min(((partner?.confidence || 0.5) + (customer?.confidence || 0.5)) / 2, 1),
       status: 'new',
-      crmAction: Math.random() > 0.5 ? 'create' : 'update',
+      crmAction: (() => {
+        const rand = Math.random()
+        if (rand > 0.7) return 'already_linked'
+        if (rand > 0.4) return 'link'
+        return 'create'
+      })(),
       existingOpportunityId: Math.random() > 0.5 ? `OPP-${Math.floor(Math.random() * 10000)}` : undefined,
+      existingOpportunityName: Math.random() > 0.5 ? `${customer?.name || 'Customer'} - Migration Project` : undefined,
       dealSize: dealSizeMatch ? dealSizeMatch[0] : `$${formatDealSize(user)}`,
       timeline: timelineMatch ? timelineMatch[0] : `${Math.floor(Math.random() * 6 + 3)} months`,
       createdAt: comm.date,
