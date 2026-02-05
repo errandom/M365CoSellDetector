@@ -21,10 +21,30 @@ export interface MSXAccount {
   name: string
 }
 
+export interface MSXPartnerReferral {
+  referralid: string
+  name: string
+  partneraccount?: {
+    name: string
+    accountid: string
+  }
+  opportunityid?: string
+  statecode: number
+  createdon: string
+}
+
 export interface MSXMatchResult {
   found: boolean
   opportunities: MSXOpportunity[]
   matchedAccount?: MSXAccount
+}
+
+export interface MSXPartnerEngagementCheck {
+  opportunityExists: boolean
+  opportunity?: MSXOpportunity
+  partnerAlreadyLinked: boolean
+  existingReferral?: MSXPartnerReferral
+  action: 'create_opportunity' | 'link_partner' | 'already_linked'
 }
 
 class MSXService {
@@ -222,6 +242,110 @@ class MSXService {
     } catch (error) {
       console.error('MSX connection test failed:', error)
       return false
+    }
+  }
+
+  /**
+   * Search for partner referrals linked to an opportunity
+   * Partner referrals are often stored in msdyn_referral or similar entities
+   */
+  async getPartnerReferralsForOpportunity(opportunityId: string): Promise<MSXPartnerReferral[]> {
+    try {
+      // Query partner referrals linked to this opportunity
+      // Note: Entity name may vary by MSX configuration (msdyn_referral, msp_partnerreferral, etc.)
+      const filter = `_msdyn_opportunityid_value eq ${opportunityId}`
+      const select = 'msdyn_referralid,msdyn_name,statecode,createdon'
+      const expand = 'msdyn_partneraccount($select=accountid,name)'
+      
+      const response = await this.msxRequest<{ value: any[] }>(
+        `/msdyn_referrals?$filter=${encodeURIComponent(filter)}&$select=${select}&$expand=${expand}&$top=50`
+      )
+      
+      return response.value.map((ref: any) => ({
+        referralid: ref.msdyn_referralid,
+        name: ref.msdyn_name,
+        partneraccount: ref.msdyn_partneraccount ? {
+          name: ref.msdyn_partneraccount.name,
+          accountid: ref.msdyn_partneraccount.accountid,
+        } : undefined,
+        opportunityid: opportunityId,
+        statecode: ref.statecode,
+        createdon: ref.createdon,
+      }))
+    } catch (error) {
+      console.warn('Error fetching partner referrals:', error)
+      return []
+    }
+  }
+
+  /**
+   * Check if a specific partner is already linked to an opportunity
+   */
+  async isPartnerLinkedToOpportunity(opportunityId: string, partnerName: string): Promise<{
+    linked: boolean
+    referral?: MSXPartnerReferral
+  }> {
+    const referrals = await this.getPartnerReferralsForOpportunity(opportunityId)
+    
+    // Check if any referral matches the partner name (case-insensitive)
+    const matchingReferral = referrals.find(ref => 
+      ref.partneraccount?.name.toLowerCase().includes(partnerName.toLowerCase()) ||
+      partnerName.toLowerCase().includes(ref.partneraccount?.name.toLowerCase() || '')
+    )
+
+    return {
+      linked: !!matchingReferral,
+      referral: matchingReferral,
+    }
+  }
+
+  /**
+   * Comprehensive check for partner engagement status
+   * Determines if: 
+   * - A new opportunity needs to be created
+   * - A partner needs to be linked to an existing opportunity
+   * - The partner is already linked (no action needed)
+   */
+  async checkPartnerEngagement(
+    customerName: string,
+    partnerName: string
+  ): Promise<MSXPartnerEngagementCheck> {
+    // First, check if opportunity exists for this customer
+    const opportunityResult = await this.checkExistingOpportunities(customerName)
+
+    if (!opportunityResult.found || opportunityResult.opportunities.length === 0) {
+      // No opportunity exists - need to create new
+      return {
+        opportunityExists: false,
+        partnerAlreadyLinked: false,
+        action: 'create_opportunity',
+      }
+    }
+
+    // Opportunity exists - check if partner is already linked
+    const opportunity = opportunityResult.opportunities[0]
+    const partnerCheck = await this.isPartnerLinkedToOpportunity(
+      opportunity.opportunityid,
+      partnerName
+    )
+
+    if (partnerCheck.linked) {
+      // Partner already linked to this opportunity
+      return {
+        opportunityExists: true,
+        opportunity,
+        partnerAlreadyLinked: true,
+        existingReferral: partnerCheck.referral,
+        action: 'already_linked',
+      }
+    }
+
+    // Opportunity exists but partner not linked - need to link
+    return {
+      opportunityExists: true,
+      opportunity,
+      partnerAlreadyLinked: false,
+      action: 'link_partner',
     }
   }
 }
