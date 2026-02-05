@@ -2,7 +2,11 @@ export type CommunicationType = 'email' | 'chat' | 'meeting'
 
 export type OpportunityStatus = 'new' | 'review' | 'confirmed' | 'synced' | 'rejected'
 
-export type CRMAction = 'create' | 'update' | 'link'
+// MSX Action types:
+// - create: Create new MSX opportunity (no matching opportunity found)
+// - link: Link partner to existing MSX opportunity (opportunity exists but partner not linked)
+// - already_linked: Partner engagement already exists in MSX (no action needed)
+export type CRMAction = 'create' | 'link' | 'already_linked'
 
 export type IndustryVertical = 'financial-services' | 'healthcare' | 'retail' | 'manufacturing' | 'technology' | 'government' | 'education'
 
@@ -30,12 +34,15 @@ export interface DetectedOpportunity {
   communication: Communication
   partner: Entity | null
   customer: Entity | null
+  solutionArea?: SolutionArea
   summary: string
   keywords: string[]
   confidence: number
   status: OpportunityStatus
   crmAction: CRMAction
   existingOpportunityId?: string
+  existingOpportunityName?: string
+  existingReferralId?: string
   dealSize?: string
   timeline?: string
   createdAt: string
