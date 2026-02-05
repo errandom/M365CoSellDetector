@@ -121,11 +121,11 @@ function App() {
         )
       )
       toast.success('Synced to MSX!', {
-        description: 'Opportunity has been created/updated in MSX'
+        description: 'Partner engagement has been created/updated in MSX'
       })
     }, 1500)
     
-    toast.success('Opportunity confirmed', {
+    toast.success('Partner engagement confirmed', {
       description: 'Syncing to MSX...'
     })
   }
@@ -138,8 +138,8 @@ function App() {
           : opp
       )
     )
-    toast.info('Opportunity rejected', {
-      description: 'This opportunity will not be synced to MSX'
+    toast.info('Partner engagement rejected', {
+      description: 'This engagement will not be synced to MSX'
     })
   }
   
