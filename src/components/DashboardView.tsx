@@ -15,7 +15,7 @@ export function DashboardView({ metrics }: DashboardViewProps) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          title="Total Opportunities"
+          title="Partner Engagements"
           value={metrics.totalOpportunities}
           trend={{ direction: 'up', value: '+12% this month' }}
           icon={<TrendUp size={24} weight="duotone" className="text-accent" />}
@@ -28,7 +28,7 @@ export function DashboardView({ metrics }: DashboardViewProps) {
           delay={0.1}
         />
         <MetricCard
-          title="Synced to CRM"
+          title="Synced to MSX"
           value={metrics.synced}
           trend={{ direction: 'up', value: '+8 this week' }}
           icon={<CheckCircle size={24} weight="duotone" className="text-success" />}
