@@ -120,13 +120,13 @@ function App() {
             : opp
         )
       )
-      toast.success('Synced to CRM!', {
-        description: 'Opportunity has been created/updated in Dynamics 365'
+      toast.success('Synced to MSX!', {
+        description: 'Opportunity has been created/updated in MSX'
       })
     }, 1500)
     
     toast.success('Opportunity confirmed', {
-      description: 'Syncing to Dynamics 365...'
+      description: 'Syncing to MSX...'
     })
   }
   
@@ -139,7 +139,7 @@ function App() {
       )
     )
     toast.info('Opportunity rejected', {
-      description: 'This opportunity will not be synced to CRM'
+      description: 'This opportunity will not be synced to MSX'
     })
   }
   
@@ -163,13 +163,13 @@ function App() {
         )
       )
       toast.success('All confirmed opportunities synced!', {
-        description: `${selectedIds.length} opportunities updated in Dynamics 365`
+        description: `${selectedIds.length} opportunities synced to MSX`
       })
       setSelectedIds([])
     }, 2000)
     
     toast.success(`Confirmed ${selectedIds.length} opportunities`, {
-      description: 'Syncing to Dynamics 365...'
+      description: 'Syncing to MSX...'
     })
   }
   
@@ -194,9 +194,9 @@ function App() {
                   <Sparkle size={24} weight="duotone" className="text-accent" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">M365 Co-Sell Intelligence</h1>
+                  <h1 className="text-xl font-bold">M365 Co-Sell Detector</h1>
                   <p className="text-xs text-muted-foreground">
-                    AI-Powered Partner Opportunity Detection
+                    AI-Powered Detection of Co-Sell Partner Engagements
                   </p>
                 </div>
                 {isDemoMode && (
@@ -283,9 +283,9 @@ function App() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">All Opportunities</h2>
+                    <h2 className="text-lg font-semibold">Partner Engagements</h2>
                     <p className="text-sm text-muted-foreground">
-                      {opportunities.length} total opportunities detected
+                      {opportunities.length} partner engagements detected
                     </p>
                   </div>
                   <div className="flex gap-2">
