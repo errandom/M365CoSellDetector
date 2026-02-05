@@ -259,11 +259,11 @@ export function exportToExcel(
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Opportunities')
 
   const summaryData = [
-    { Metric: 'Total Opportunities', Value: filteredOpportunities.length },
+    { Metric: 'Partner Engagements', Value: filteredOpportunities.length },
     { Metric: 'New', Value: filteredOpportunities.filter(o => o.status === 'new').length },
     { Metric: 'In Review', Value: filteredOpportunities.filter(o => o.status === 'review').length },
     { Metric: 'Confirmed', Value: filteredOpportunities.filter(o => o.status === 'confirmed').length },
-    { Metric: 'Synced', Value: filteredOpportunities.filter(o => o.status === 'synced').length },
+    { Metric: 'Synced to MSX', Value: filteredOpportunities.filter(o => o.status === 'synced').length },
     { Metric: 'Rejected', Value: filteredOpportunities.filter(o => o.status === 'rejected').length },
     { Metric: 'Export Date', Value: new Date().toLocaleString() },
   ]
