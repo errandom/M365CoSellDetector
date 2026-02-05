@@ -1,5 +1,18 @@
 import * as XLSX from 'xlsx'
-import type { DetectedOpportunity, OpportunityStatus, CommunicationType, ExportTemplate } from './types'
+import type { DetectedOpportunity, OpportunityStatus, CommunicationType, ExportTemplate, SolutionArea } from './types'
+
+const solutionAreaLabels: Record<SolutionArea, string> = {
+  'azure-migration': 'Azure Migration',
+  'modern-workplace': 'Modern Workplace',
+  'security': 'Security',
+  'data-ai': 'Data & AI',
+  'app-modernization': 'App Modernization',
+  'infrastructure': 'Infrastructure'
+}
+
+function formatSolutionArea(area: SolutionArea): string {
+  return solutionAreaLabels[area] || area
+}
 
 export interface ExportFilters {
   status: OpportunityStatus[]
@@ -22,6 +35,7 @@ interface ExportData {
   status: string
   partner: string
   customer: string
+  solutionArea: string
   communicationType: string
   subject: string
   date: string
@@ -36,16 +50,17 @@ interface ExportData {
 }
 
 export const defaultColumns: ExportColumn[] = [
-  { field: 'id', label: 'Opportunity ID', enabled: true },
+  { field: 'id', label: 'Engagement ID', enabled: true },
   { field: 'status', label: 'Status', enabled: true },
   { field: 'partner', label: 'Partner', enabled: true },
   { field: 'customer', label: 'Customer', enabled: true },
+  { field: 'solutionArea', label: 'Solution Area', enabled: true },
   { field: 'communicationType', label: 'Source Type', enabled: true },
   { field: 'subject', label: 'Subject', enabled: true },
   { field: 'date', label: 'Date', enabled: true },
   { field: 'summary', label: 'Summary', enabled: true },
   { field: 'confidence', label: 'Confidence', enabled: true },
-  { field: 'crmAction', label: 'CRM Action', enabled: true },
+  { field: 'crmAction', label: 'MSX Action', enabled: true },
   { field: 'dealSize', label: 'Deal Size', enabled: false },
   { field: 'timeline', label: 'Timeline', enabled: false },
   { field: 'keywords', label: 'Keywords', enabled: false },
@@ -200,6 +215,9 @@ export function prepareExportData(
           break
         case 'customer':
           row[col.label] = opp.customer?.name || 'N/A'
+          break
+        case 'solutionArea':
+          row[col.label] = opp.solutionArea ? formatSolutionArea(opp.solutionArea) : 'N/A'
           break
         case 'communicationType':
           row[col.label] = opp.communication.type.charAt(0).toUpperCase() + opp.communication.type.slice(1)
