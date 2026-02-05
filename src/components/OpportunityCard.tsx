@@ -3,9 +3,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
   Envelope, ChatCircle, Video, Handshake, Buildings, 
-  CheckCircle, Clock, XCircle, ArrowRight 
+  CheckCircle, Clock, XCircle, ArrowRight, Cube 
 } from '@phosphor-icons/react'
-import type { DetectedOpportunity } from '@/lib/types'
+import type { DetectedOpportunity, SolutionArea } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 interface OpportunityCardProps {
@@ -26,15 +26,24 @@ const statusConfig = {
 }
 
 const actionConfig = {
-  create: { label: 'Create New', color: 'text-accent' },
-  update: { label: 'Update Existing', color: 'text-primary' },
-  link: { label: 'Link Partner', color: 'text-secondary' }
+  create: { label: 'Create New Opportunity', color: 'text-accent' },
+  link: { label: 'Link to Existing', color: 'text-primary' },
+  already_linked: { label: 'Already in MSX', color: 'text-muted-foreground' }
 }
 
 const typeIcons = {
   email: Envelope,
   chat: ChatCircle,
   meeting: Video
+}
+
+const solutionAreaLabels: Record<SolutionArea, string> = {
+  'azure-migration': 'Azure Migration',
+  'modern-workplace': 'Modern Workplace',
+  'security': 'Security',
+  'data-ai': 'Data & AI',
+  'app-modernization': 'App Modernization',
+  'infrastructure': 'Infrastructure'
 }
 
 export function OpportunityCard({ 
@@ -107,6 +116,12 @@ export function OpportunityCard({
             </span>
           </div>
         )}
+        {opportunity.solutionArea && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 rounded-md border border-secondary/20">
+            <Cube size={14} className="text-secondary flex-shrink-0" />
+            <span className="text-xs font-medium text-foreground">{solutionAreaLabels[opportunity.solutionArea]}</span>
+          </div>
+        )}
       </div>
       
       <div className="flex items-center justify-between pt-3 border-t border-border">
@@ -114,10 +129,12 @@ export function OpportunityCard({
           <span className={action.color}>
             {action.label}
           </span>
-          {opportunity.existingOpportunityId && (
+          {(opportunity.existingOpportunityName || opportunity.existingOpportunityId) && (
             <>
               <ArrowRight size={12} className="text-muted-foreground" />
-              <span className="text-muted-foreground">{opportunity.existingOpportunityId}</span>
+              <span className="text-muted-foreground truncate max-w-[150px]" title={opportunity.existingOpportunityName || opportunity.existingOpportunityId}>
+                {opportunity.existingOpportunityName || opportunity.existingOpportunityId}
+              </span>
             </>
           )}
         </div>
