@@ -48,3 +48,13 @@ export const loginRequest = {
 export const graphConfig = {
   graphMeEndpoint: 'https://graph.microsoft.com/v1.0/me',
 }
+
+// MSX (Dynamics 365) configuration
+export const msxConfig = {
+  baseUrl: 'https://microsoftsales.crm.dynamics.com',
+  apiVersion: 'v9.2',
+}
+
+export const msxRequest = {
+  scopes: ['https://microsoftsales.crm.dynamics.com/user_impersonation'],
+}
