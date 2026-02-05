@@ -1,7 +1,7 @@
 import { graphService, type EmailMessage, type ChatMessage, type MeetingTranscript } from './graphService'
 import { scanHistoryService } from './scanHistoryService'
 import { msxService } from './msxService'
-import type { DetectedOpportunity, Communication, Entity, CommunicationType } from './types'
+import type { DetectedOpportunity, Communication, Entity, CommunicationType, SolutionArea } from './types'
 
 export async function detectOpportunitiesFromGraphData(
   startDate: Date,
@@ -14,13 +14,13 @@ export async function detectOpportunitiesFromGraphData(
   const opportunities: DetectedOpportunity[] = []
 
   try {
-    onProgress?.('Connecting to Microsoft Graph API...', 10)
+    onProgress?.('Connecting to Microsoft Graph API...', 0.10)
     await new Promise(resolve => setTimeout(resolve, 500))
 
     const lastScanDates: { email?: Date; chat?: Date; meeting?: Date } = {}
     
     if (useIncrementalScan) {
-      onProgress?.('Checking for previous scans...', 15)
+      onProgress?.('Checking for previous scans...', 0.15)
       for (const source of sources) {
         const lastScan = await scanHistoryService.getLastScanDate(source)
         if (lastScan) {
@@ -31,9 +31,9 @@ export async function detectOpportunitiesFromGraphData(
 
     const hasIncrementalData = Object.keys(lastScanDates).length > 0
     if (hasIncrementalData) {
-      onProgress?.('Fetching only new communications since last scan...', 20)
+      onProgress?.('Fetching only new communications since last scan...', 0.20)
     } else {
-      onProgress?.('Fetching communications from M365...', 20)
+      onProgress?.('Fetching communications from M365...', 0.20)
     }
     
     const data = await graphService.scanCommunications(
@@ -44,7 +44,7 @@ export async function detectOpportunitiesFromGraphData(
       lastScanDates
     )
 
-    onProgress?.('Processing emails...', 40)
+    onProgress?.('Processing emails...', 0.40)
     for (const email of data.emails) {
       const opportunity = await processEmail(email, keywords)
       if (opportunity) {
@@ -52,7 +52,7 @@ export async function detectOpportunitiesFromGraphData(
       }
     }
 
-    onProgress?.('Processing Teams chats...', 60)
+    onProgress?.('Processing Teams chats...', 0.60)
     for (const chat of data.chats) {
       const opportunity = await processChat(chat, keywords)
       if (opportunity) {
@@ -60,7 +60,7 @@ export async function detectOpportunitiesFromGraphData(
       }
     }
 
-    onProgress?.('Processing meeting transcripts...', 80)
+    onProgress?.('Processing meeting transcripts...', 0.80)
     for (const transcript of data.transcripts) {
       const opportunity = await processTranscript(transcript, keywords)
       if (opportunity) {
@@ -68,11 +68,11 @@ export async function detectOpportunitiesFromGraphData(
       }
     }
 
-    onProgress?.('Analyzing opportunities with AI...', 85)
+    onProgress?.('Analyzing opportunities with AI...', 0.85)
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // Cross-validate with MSX to check for existing opportunities
-    onProgress?.('Cross-validating with MSX...', 92)
+    onProgress?.('Cross-validating with MSX...', 0.92)
     await crossValidateWithMSX(opportunities)
 
     const scanEndDate = new Date()
@@ -81,7 +81,7 @@ export async function detectOpportunitiesFromGraphData(
     }
     await scanHistoryService.updateFullScanDate(scanEndDate)
 
-    onProgress?.('Finalizing results...', 100)
+    onProgress?.('Finalizing results...', 1.0)
 
     return opportunities
   } catch (error) {
@@ -102,6 +102,7 @@ async function processEmail(email: EmailMessage, keywords: string[]): Promise<De
 
     const partner = await extractPartner(email.body)
     const customer = await extractCustomer(email.body)
+    const solutionArea = await extractSolutionArea(email.body)
     const summary = await generateSummary(email.subject, email.body)
 
     const communication: Communication = {
@@ -119,6 +120,7 @@ async function processEmail(email: EmailMessage, keywords: string[]): Promise<De
       communication,
       partner,
       customer,
+      solutionArea,
       summary,
       keywords: matchedKeywords,
       confidence: calculateConfidence(matchedKeywords.length, partner, customer),
@@ -143,6 +145,7 @@ async function processChat(chat: ChatMessage, keywords: string[]): Promise<Detec
 
     const partner = await extractPartner(chat.body)
     const customer = await extractCustomer(chat.body)
+    const solutionArea = await extractSolutionArea(chat.body)
     const summary = await generateSummary('Teams Chat', chat.body)
 
     const communication: Communication = {
@@ -160,6 +163,7 @@ async function processChat(chat: ChatMessage, keywords: string[]): Promise<Detec
       communication,
       partner,
       customer,
+      solutionArea,
       summary,
       keywords: matchedKeywords,
       confidence: calculateConfidence(matchedKeywords.length, partner, customer),
@@ -187,6 +191,7 @@ async function processTranscript(
 
     const partner = await extractPartner(transcript.content)
     const customer = await extractCustomer(transcript.content)
+    const solutionArea = await extractSolutionArea(transcript.content)
     const summary = await generateSummary('Meeting Transcript', transcript.content)
 
     const communication: Communication = {
@@ -204,6 +209,7 @@ async function processTranscript(
       communication,
       partner,
       customer,
+      solutionArea,
       summary,
       keywords: matchedKeywords,
       confidence: calculateConfidence(matchedKeywords.length, partner, customer),
@@ -283,6 +289,48 @@ Only return the JSON, no other text.`
   }
 }
 
+async function extractSolutionArea(content: string): Promise<SolutionArea | undefined> {
+  const solutionAreas: SolutionArea[] = [
+    'azure-migration',
+    'modern-workplace',
+    'security',
+    'data-ai',
+    'app-modernization',
+    'infrastructure'
+  ]
+
+  const prompt = window.spark.llmPrompt`Analyze this text and identify the primary Microsoft solution area or technology being discussed.
+
+Text: ${content.substring(0, 2000)}
+
+Choose the most relevant solution area from this list:
+- azure-migration: Azure cloud migration, lift and shift, datacenter modernization
+- modern-workplace: Microsoft 365, Teams, productivity, collaboration tools
+- security: Security, compliance, identity, Zero Trust, Defender
+- data-ai: Data analytics, AI, Machine Learning, Copilot, Power BI
+- app-modernization: Application modernization, containers, Kubernetes, DevOps
+- infrastructure: Infrastructure, networking, hybrid cloud, Azure Arc
+
+Return a JSON object with:
+- solutionArea: one of the exact values listed above, or null if none applies
+- confidence: a number between 0 and 1
+
+Only return the JSON, no other text.`
+
+  try {
+    const result = await window.spark.llm(prompt, 'gpt-4o-mini', true)
+    const parsed = JSON.parse(result)
+
+    if (parsed.solutionArea && solutionAreas.includes(parsed.solutionArea)) {
+      return parsed.solutionArea
+    }
+    return undefined
+  } catch (error) {
+    console.error('Error extracting solution area:', error)
+    return undefined
+  }
+}
+
 async function generateSummary(subject: string, content: string): Promise<string> {
   const truncatedContent = content.substring(0, 2000)
 
@@ -324,11 +372,17 @@ function calculateConfidence(
 
 /**
  * Cross-validate detected opportunities against MSX (Dynamics 365)
- * to identify existing opportunities vs new ones
+ * to identify existing opportunities and partner engagement status
  */
 async function crossValidateWithMSX(opportunities: DetectedOpportunity[]): Promise<void> {
-  // Cache for customer lookups to avoid duplicate API calls
-  const customerCache = new Map<string, { found: boolean; opportunityId?: string; opportunityName?: string }>()
+  // Cache for customer+partner lookups to avoid duplicate API calls
+  const customerCache = new Map<string, { 
+    found: boolean
+    action: 'create' | 'link' | 'already_linked'
+    opportunityId?: string
+    opportunityName?: string
+    referralId?: string
+  }>()
 
   for (const opportunity of opportunities) {
     // Skip if no customer identified
@@ -337,46 +391,68 @@ async function crossValidateWithMSX(opportunities: DetectedOpportunity[]): Promi
     }
 
     const customerName = opportunity.customer.name
+    const partnerName = opportunity.partner?.name || ''
+    const cacheKey = `${customerName}|${partnerName}`
 
     // Check cache first
-    if (customerCache.has(customerName)) {
-      const cached = customerCache.get(customerName)!
-      if (cached.found && cached.opportunityId) {
-        opportunity.crmAction = 'update'
+    if (customerCache.has(cacheKey)) {
+      const cached = customerCache.get(cacheKey)!
+      opportunity.crmAction = cached.action
+      if (cached.opportunityId) {
         opportunity.existingOpportunityId = cached.opportunityId
+        opportunity.existingOpportunityName = cached.opportunityName
+      }
+      if (cached.referralId) {
+        opportunity.existingReferralId = cached.referralId
       }
       continue
     }
 
     try {
-      // Query MSX for existing opportunities for this customer
-      const msxResult = await msxService.checkExistingOpportunities(customerName)
+      // Use comprehensive partner engagement check
+      const engagementCheck = await msxService.checkPartnerEngagement(customerName, partnerName)
 
-      if (msxResult.found && msxResult.opportunities.length > 0) {
-        // Found existing opportunity - mark for update
-        const existingOpp = msxResult.opportunities[0] // Use most recent
-        opportunity.crmAction = 'update'
-        opportunity.existingOpportunityId = existingOpp.opportunityid
+      if (engagementCheck.action === 'already_linked') {
+        // Partner already linked to opportunity - no action needed
+        opportunity.crmAction = 'already_linked'
+        opportunity.existingOpportunityId = engagementCheck.opportunity?.opportunityid
+        opportunity.existingOpportunityName = engagementCheck.opportunity?.name
+        opportunity.existingReferralId = engagementCheck.existingReferral?.referralid
 
-        // Cache the result
-        customerCache.set(customerName, {
+        customerCache.set(cacheKey, {
           found: true,
-          opportunityId: existingOpp.opportunityid,
-          opportunityName: existingOpp.name,
+          action: 'already_linked',
+          opportunityId: engagementCheck.opportunity?.opportunityid,
+          opportunityName: engagementCheck.opportunity?.name,
+          referralId: engagementCheck.existingReferral?.referralid,
         })
 
-        console.info(`MSX Match: "${customerName}" -> Existing opportunity: ${existingOpp.name}`)
+        console.info(`MSX: Partner "${partnerName}" already linked to opportunity "${engagementCheck.opportunity?.name}"`)
+      } else if (engagementCheck.action === 'link_partner') {
+        // Opportunity exists but partner not linked
+        opportunity.crmAction = 'link'
+        opportunity.existingOpportunityId = engagementCheck.opportunity?.opportunityid
+        opportunity.existingOpportunityName = engagementCheck.opportunity?.name
+
+        customerCache.set(cacheKey, {
+          found: true,
+          action: 'link',
+          opportunityId: engagementCheck.opportunity?.opportunityid,
+          opportunityName: engagementCheck.opportunity?.name,
+        })
+
+        console.info(`MSX: Will link partner "${partnerName}" to existing opportunity "${engagementCheck.opportunity?.name}"`)
       } else {
-        // No existing opportunity - will create new
+        // No opportunity exists - will create new
         opportunity.crmAction = 'create'
-        customerCache.set(customerName, { found: false })
+        customerCache.set(cacheKey, { found: false, action: 'create' })
         
-        console.info(`MSX: No existing opportunity found for "${customerName}" - will create new`)
+        console.info(`MSX: No opportunity found for "${customerName}" - will create new`)
       }
     } catch (error) {
-      console.warn(`MSX lookup failed for customer "${customerName}":`, error)
+      console.warn(`MSX lookup failed for "${customerName}" / "${partnerName}":`, error)
       // On error, default to create action
-      customerCache.set(customerName, { found: false })
+      customerCache.set(cacheKey, { found: false, action: 'create' })
     }
   }
 }
