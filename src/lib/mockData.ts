@@ -136,8 +136,14 @@ export function detectOpportunities(communications: Communication[], customKeywo
       keywords: foundKeywords,
       confidence: Math.min((partner?.confidence || 0.5) + (customer?.confidence || 0.5)) / 2,
       status: 'new',
-      crmAction: Math.random() > 0.5 ? 'create' : 'update',
+      crmAction: (() => {
+        const rand = Math.random()
+        if (rand > 0.7) return 'already_linked'
+        if (rand > 0.4) return 'link'
+        return 'create'
+      })(),
       existingOpportunityId: Math.random() > 0.5 ? `OPP-${Math.floor(Math.random() * 10000)}` : undefined,
+      existingOpportunityName: Math.random() > 0.5 ? `${customer?.name || 'Customer'} - Azure Migration` : undefined,
       dealSize: dealSizeMatch ? dealSizeMatch[0] : undefined,
       timeline: timelineMatch ? timelineMatch[0] : undefined,
       createdAt: comm.date,
