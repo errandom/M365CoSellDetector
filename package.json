@@ -1,15 +1,21 @@
 {
-    "name": "spark-template",
+    "name": "m365-cosell-detector",
     "private": true,
-    "version": "0.0.0",
+    "version": "1.0.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
+        "dev:server": "cd server && npm run dev",
+        "dev:full": "concurrently \"npm run dev\" \"npm run dev:server\"",
         "kill": "fuser -k 5000/tcp",
         "build": "tsc -b --noCheck && vite build",
+        "build:server": "cd server && npm run build",
+        "build:all": "npm run build && npm run build:server",
         "lint": "eslint .",
         "optimize": "vite optimize",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "server": "cd server && npm start",
+        "setup:server": "cd server && npm install"
     },
     "dependencies": {
         "@azure/msal-browser": "^4.27.0",
@@ -83,6 +89,7 @@
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",
         "@vitejs/plugin-react-swc": "^4.2.2",
+        "concurrently": "^9.2.1",
         "eslint": "^9.28.0",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.19",
@@ -94,7 +101,8 @@
     },
     "workspaces": {
         "packages": [
-            "packages/*"
+            "packages/*",
+            "server"
         ]
     }
 }
