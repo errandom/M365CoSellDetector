@@ -17,7 +17,7 @@ import { ExportDialog } from '@/components/ExportDialog'
 import { ScheduledExportsDialog } from '@/components/ScheduledExportsDialog'
 import { RealUserProfileBadge } from '@/components/RealUserProfileBadge'
 import { useScheduledExports } from '@/hooks/useScheduledExports'
-import { generateDashboardMetrics } from '@/lib/mockData'
+import { generateDashboardMetrics, simulateAIScan } from '@/lib/mockData'
 import { detectOpportunitiesFromGraphData } from '@/lib/opportunityDetectionService'
 import type { DetectedOpportunity, CommunicationType, OpportunityStatus } from '@/lib/types'
 
@@ -57,17 +57,32 @@ function App() {
     setActiveTab('results')
     
     try {
-      const results = await detectOpportunitiesFromGraphData(
-        config.dateRange.from,
-        config.dateRange.to,
-        config.sources,
-        config.keywords,
-        (stage, progress) => {
-          setScanStage(stage)
-          setScanProgress(progress)
-        },
-        config.useIncrementalScan
-      )
+      let results: DetectedOpportunity[]
+      
+      if (isDemoMode) {
+        // Use mock data in demo mode
+        results = await simulateAIScan(
+          config.sources,
+          config.keywords,
+          (stage, progress) => {
+            setScanStage(stage)
+            setScanProgress(progress)
+          }
+        )
+      } else {
+        // Use real Graph API when authenticated
+        results = await detectOpportunitiesFromGraphData(
+          config.dateRange.from,
+          config.dateRange.to,
+          config.sources,
+          config.keywords,
+          (stage, progress) => {
+            setScanStage(stage)
+            setScanProgress(progress)
+          },
+          config.useIncrementalScan
+        )
+      }
       
       setOpportunities((current) => {
         const currentOpps = current || []
@@ -120,13 +135,13 @@ function App() {
             : opp
         )
       )
-      toast.success('Synced to MSX!', {
-        description: 'Partner engagement has been created/updated in MSX'
+      toast.success('Synced to CRM!', {
+        description: 'Opportunity has been created/updated in Dynamics 365'
       })
     }, 1500)
     
-    toast.success('Partner engagement confirmed', {
-      description: 'Syncing to MSX...'
+    toast.success('Opportunity confirmed', {
+      description: 'Syncing to Dynamics 365...'
     })
   }
   
@@ -138,8 +153,8 @@ function App() {
           : opp
       )
     )
-    toast.info('Partner engagement rejected', {
-      description: 'This engagement will not be synced to MSX'
+    toast.info('Opportunity rejected', {
+      description: 'This opportunity will not be synced to CRM'
     })
   }
   
@@ -163,13 +178,13 @@ function App() {
         )
       )
       toast.success('All confirmed opportunities synced!', {
-        description: `${selectedIds.length} opportunities synced to MSX`
+        description: `${selectedIds.length} opportunities updated in Dynamics 365`
       })
       setSelectedIds([])
     }, 2000)
     
     toast.success(`Confirmed ${selectedIds.length} opportunities`, {
-      description: 'Syncing to MSX...'
+      description: 'Syncing to Dynamics 365...'
     })
   }
   
@@ -194,9 +209,9 @@ function App() {
                   <Sparkle size={24} weight="duotone" className="text-accent" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">M365 Co-Sell Detector</h1>
+                  <h1 className="text-xl font-bold">M365 Co-Sell Intelligence</h1>
                   <p className="text-xs text-muted-foreground">
-                    AI-Powered Detection of Co-Sell Partner Engagements
+                    AI-Powered Partner Opportunity Detection
                   </p>
                 </div>
                 {isDemoMode && (
@@ -283,9 +298,9 @@ function App() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">Partner Engagements</h2>
+                    <h2 className="text-lg font-semibold">All Opportunities</h2>
                     <p className="text-sm text-muted-foreground">
-                      {opportunities.length} partner engagements detected
+                      {opportunities.length} total opportunities detected
                     </p>
                   </div>
                   <div className="flex gap-2">
