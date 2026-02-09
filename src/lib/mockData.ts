@@ -1,4 +1,4 @@
-import type { Communication, DetectedOpportunity, Entity, DashboardMetrics } from './types'
+import type { Communication, DetectedOpportunity, Entity, DashboardMetrics, SolutionArea } from './types'
 
 const partners = [
   'Accenture', 'Deloitte Digital', 'IBM Consulting', 'Capgemini', 
@@ -13,6 +13,32 @@ const customers = [
 const keywords = [
   'co-sell', 'partner', 'joint opportunity', 'collaboration', 'partnership',
   'co-selling', 'referral', 'joint proposal', 'partner engagement'
+
+const solutionAreas: SolutionArea[] = [
+  'azure-migration', 'modern-workplace', 'security', 'data-ai', 'app-modernization', 'infrastructure'
+]
+
+const engagementTypes = [
+  'Co-sell', 'Partner Referral', 'Joint Proposal', 'Co-Build', 'Marketplace Transaction'
+]
+
+const askExpectations = [
+  'Joint customer presentation and technical demo',
+  'Partner to provide implementation services and support',
+  'Looking for Microsoft technical resources for POC',
+  'Need Azure credits and co-investment for pilot',
+  'Request for joint executive briefing with customer',
+  'Partner seeking co-sell incentive registration',
+  'Technical validation and architecture review needed',
+  'Customer requires joint proposal with pricing'
+]
+
+const nextStepsOptions = [
+  'Schedule joint customer call',
+  'Register opportunity in Partner Center',
+  'Assign Microsoft technical seller',
+  'Share customer requirements with partner',
+  'Set up internal alignment meeting'
 ]
 
 export function generateMockEmails(count: number = 5): Communication[] {
@@ -136,18 +162,17 @@ export function detectOpportunities(communications: Communication[], customKeywo
       keywords: foundKeywords,
       confidence: Math.min((partner?.confidence || 0.5) + (customer?.confidence || 0.5)) / 2,
       status: 'new',
-      crmAction: (() => {
-        const rand = Math.random()
-        if (rand > 0.7) return 'already_linked'
-        if (rand > 0.4) return 'link'
-        return 'create'
-      })(),
+      crmAction: Math.random() > 0.5 ? 'create' : 'update',
       existingOpportunityId: Math.random() > 0.5 ? `OPP-${Math.floor(Math.random() * 10000)}` : undefined,
-      existingOpportunityName: Math.random() > 0.5 ? `${customer?.name || 'Customer'} - Azure Migration` : undefined,
-      dealSize: dealSizeMatch ? dealSizeMatch[0] : undefined,
-      timeline: timelineMatch ? timelineMatch[0] : undefined,
+      dealSize: dealSizeMatch ? dealSizeMatch[0] : `$${(Math.random() * 5 + 0.5).toFixed(1)}M`,
+      timeline: timelineMatch ? timelineMatch[0] : 'Q2 2026',
       createdAt: comm.date,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      // New fields for prominent display
+      askExpectation: askExpectations[Math.floor(Math.random() * askExpectations.length)],
+      solutionArea: solutionAreas[Math.floor(Math.random() * solutionAreas.length)],
+      engagementType: engagementTypes[Math.floor(Math.random() * engagementTypes.length)],
+      nextSteps: nextStepsOptions[Math.floor(Math.random() * nextStepsOptions.length)]
     })
   })
   
