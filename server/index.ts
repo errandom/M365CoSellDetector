@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { databaseRouter } from './routes/database.js'
 import { scanResultsRouter } from './routes/scanResults.js'
-import { connectToDatabase, closeDatabaseConnection } from './services/databaseService.js'
+import { closeDatabaseConnection, setUserToken } from './services/databaseService.js'
 
 const app = express()
 const PORT = process.env.SERVER_PORT || 3001
@@ -14,6 +14,18 @@ app.use(cors({
   credentials: true
 }))
 app.use(express.json({ limit: '10mb' })) // Increased limit for batch operations
+
+// SQL Token middleware - extracts bearer token and makes it available to database service
+app.use((req, res, next) => {
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7)
+    setUserToken(token)
+  } else {
+    setUserToken(null)
+  }
+  next()
+})
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -38,12 +50,12 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Start server
 async function startServer() {
   try {
-    console.log('Connecting to Fabric SQL database...')
-    await connectToDatabase()
-    console.log('Database connection established')
+    // Note: Database connections are now created per-request using user tokens
+    // No upfront connection needed
     
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`)
+      console.log('Using user-delegated authentication for Fabric SQL')
     })
   } catch (error) {
     console.error('Failed to start server:', error)
