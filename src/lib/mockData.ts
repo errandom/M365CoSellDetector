@@ -1,14 +1,46 @@
-import type { Communication, DetectedOpportunity, Entity, DashboardMetrics, SolutionArea } from './types'
+import type { 
+  Communication, 
+  DetectedOpportunity, 
+  Entity, 
+  DashboardMetrics, 
+  SolutionArea, 
+  BANT, 
+  Budget, 
+  Authority, 
+  Need, 
+  Timeline,
+  Contact 
+} from './types'
 
-const partners = [
-  'Accenture', 'Deloitte Digital', 'IBM Consulting', 'Capgemini', 
-  'TCS', 'Infosys', 'Wipro', 'Cognizant', 'DXC Technology', 'Atos'
+// Partner data with identifiers
+const partnersData = [
+  { name: 'Accenture', partnerOneId: 'P1-ACN-001', mpnId: 'MPN-4567890' },
+  { name: 'Deloitte Digital', partnerOneId: 'P1-DEL-002', mpnId: 'MPN-3456789' },
+  { name: 'IBM Consulting', partnerOneId: 'P1-IBM-003', mpnId: 'MPN-2345678' },
+  { name: 'Capgemini', partnerOneId: 'P1-CAP-004', mpnId: 'MPN-1234567' },
+  { name: 'TCS', partnerOneId: 'P1-TCS-005', mpnId: 'MPN-9876543' },
+  { name: 'Infosys', partnerOneId: 'P1-INF-006', mpnId: 'MPN-8765432' },
+  { name: 'Wipro', partnerOneId: 'P1-WIP-007', mpnId: 'MPN-7654321' },
+  { name: 'Cognizant', partnerOneId: 'P1-COG-008', mpnId: 'MPN-6543210' },
+  { name: 'DXC Technology', partnerOneId: 'P1-DXC-009', mpnId: 'MPN-5432109' },
+  { name: 'Atos', partnerOneId: 'P1-ATO-010', mpnId: 'MPN-4321098' }
 ]
 
-const customers = [
-  'Contoso Ltd', 'Fabrikam Inc', 'Northwind Traders', 'Adventure Works',
-  'Wide World Importers', 'Tailspin Toys', 'Fourth Coffee', 'Woodgrove Bank'
+// Account data with identifiers
+const accountsData = [
+  { name: 'Contoso Ltd', crmAccountId: 'CRM-CNT-001', tpid: 'TPID-100001' },
+  { name: 'Fabrikam Inc', crmAccountId: 'CRM-FAB-002', tpid: 'TPID-100002' },
+  { name: 'Northwind Traders', crmAccountId: 'CRM-NWT-003', tpid: 'TPID-100003' },
+  { name: 'Adventure Works', crmAccountId: 'CRM-ADW-004', tpid: 'TPID-100004' },
+  { name: 'Wide World Importers', crmAccountId: 'CRM-WWI-005', tpid: 'TPID-100005' },
+  { name: 'Tailspin Toys', crmAccountId: 'CRM-TST-006', tpid: 'TPID-100006' },
+  { name: 'Fourth Coffee', crmAccountId: 'CRM-4CF-007', tpid: 'TPID-100007' },
+  { name: 'Woodgrove Bank', crmAccountId: 'CRM-WGB-008', tpid: 'TPID-100008' }
 ]
+
+// Legacy arrays for backward compatibility
+const partners = partnersData.map(p => p.name)
+const customers = accountsData.map(a => a.name)
 
 const keywords = [
   'co-sell', 'partner', 'joint opportunity', 'collaboration', 'partnership',
@@ -16,23 +48,43 @@ const keywords = [
 ]
 
 const solutionAreas: SolutionArea[] = [
-  'azure-migration', 'modern-workplace', 'security', 'data-ai', 'app-modernization', 'infrastructure'
+  'azure-migration', 'modern-workplace', 'security', 'data-ai', 'app-modernization', 'infrastructure', 'business-applications', 'dynamics-365'
 ]
 
 const engagementTypes = [
   'Co-sell', 'Partner Referral', 'Joint Proposal', 'Co-Build', 'Marketplace Transaction'
 ]
 
-const askExpectations = [
-  'Joint customer presentation and technical demo',
-  'Partner to provide implementation services and support',
-  'Looking for Microsoft technical resources for POC',
-  'Need Azure credits and co-investment for pilot',
-  'Request for joint executive briefing with customer',
-  'Partner seeking co-sell incentive registration',
-  'Technical validation and architecture review needed',
-  'Customer requires joint proposal with pricing'
+// Customer needs/asks for BANT
+const customerNeeds = [
+  'Migrate on-premises infrastructure to Azure with minimal downtime',
+  'Implement Zero Trust security architecture across the organization',
+  'Modernize legacy applications to cloud-native microservices',
+  'Deploy Microsoft 365 Copilot for 5000+ users organization-wide',
+  'Build real-time analytics platform using Azure Synapse and Power BI',
+  'Implement Dynamics 365 for unified customer engagement',
+  'Establish disaster recovery and business continuity on Azure',
+  'Create AI/ML solution for predictive maintenance using Azure AI'
 ]
+
+// Products and services for BANT Need
+const productsOptions = [
+  ['Azure', 'Azure Migrate', 'Azure Site Recovery'],
+  ['Microsoft 365', 'Microsoft Copilot', 'Teams'],
+  ['Azure Security Center', 'Microsoft Defender', 'Entra ID'],
+  ['Azure Synapse', 'Power BI', 'Azure Data Factory'],
+  ['Dynamics 365 Sales', 'Dynamics 365 Customer Service'],
+  ['Azure Kubernetes Service', 'Azure App Service', 'Azure Functions']
+]
+
+const servicesOptions = [
+  'Architecture review', 'Implementation', 'Migration support',
+  'Training and enablement', 'Managed services', 'Technical consultation'
+]
+
+// Contact titles for Authority
+const customerTitles = ['CTO', 'CIO', 'VP of IT', 'Director of Digital Transformation', 'Head of Cloud Strategy', 'IT Director']
+const partnerTitles = ['Partner Director', 'Engagement Manager', 'Solution Architect', 'Account Executive', 'Practice Lead']
 
 const nextStepsOptions = [
   'Schedule joint customer call',
@@ -41,6 +93,122 @@ const nextStepsOptions = [
   'Share customer requirements with partner',
   'Set up internal alignment meeting'
 ]
+
+// Currency conversion rates to USD (approximate)
+const currencyRates: Record<string, number> = {
+  'USD': 1,
+  'EUR': 1.08,
+  'GBP': 1.27,
+  'CAD': 0.74,
+  'AUD': 0.65,
+  'JPY': 0.0067,
+  'INR': 0.012
+}
+
+const currencies = Object.keys(currencyRates)
+
+/**
+ * Generate a random BANT object
+ */
+function generateBANT(): BANT {
+  const missingElements: ('budget' | 'authority' | 'need' | 'timeline')[] = []
+  
+  // Randomly decide which elements are present (70% chance each)
+  const hasBudget = Math.random() > 0.3
+  const hasAuthority = Math.random() > 0.3
+  const hasNeed = Math.random() > 0.2 // Need is more commonly available
+  const hasTimeline = Math.random() > 0.3
+  
+  let budget: Budget | undefined
+  if (hasBudget) {
+    const currency = currencies[Math.floor(Math.random() * currencies.length)]
+    const amount = Math.floor(Math.random() * 5000000) + 100000 // $100K - $5M
+    budget = {
+      amount,
+      currency,
+      amountUSD: Math.round(amount * currencyRates[currency]),
+      confidence: 0.7 + Math.random() * 0.25
+    }
+  } else {
+    missingElements.push('budget')
+  }
+  
+  let authority: Authority | undefined
+  if (hasAuthority) {
+    const customerContact: Contact = {
+      name: `${['John', 'Sarah', 'Michael', 'Emily', 'David'][Math.floor(Math.random() * 5)]} ${['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'][Math.floor(Math.random() * 5)]}`,
+      email: `contact@${customers[Math.floor(Math.random() * customers.length)].toLowerCase().replace(/\s+/g, '')}.com`,
+      title: customerTitles[Math.floor(Math.random() * customerTitles.length)],
+      role: 'Decision Maker'
+    }
+    
+    const partnerContact: Contact = {
+      name: `${['Alex', 'Chris', 'Jordan', 'Taylor', 'Morgan'][Math.floor(Math.random() * 5)]} ${['Miller', 'Davis', 'Garcia', 'Wilson', 'Moore'][Math.floor(Math.random() * 5)]}`,
+      email: `partner@${partners[Math.floor(Math.random() * partners.length)].toLowerCase().replace(/\s+/g, '')}.com`,
+      title: partnerTitles[Math.floor(Math.random() * partnerTitles.length)]
+    }
+    
+    authority = {
+      customerContact,
+      partnerContact,
+      confidence: 0.75 + Math.random() * 0.2
+    }
+  } else {
+    missingElements.push('authority')
+  }
+  
+  let need: Need | undefined
+  if (hasNeed) {
+    const solutionArea = solutionAreas[Math.floor(Math.random() * solutionAreas.length)]
+    const products = productsOptions[Math.floor(Math.random() * productsOptions.length)]
+    const services = [servicesOptions[Math.floor(Math.random() * servicesOptions.length)]]
+    
+    need = {
+      description: customerNeeds[Math.floor(Math.random() * customerNeeds.length)],
+      solutionArea,
+      products,
+      services,
+      confidence: 0.8 + Math.random() * 0.15
+    }
+  } else {
+    missingElements.push('need')
+  }
+  
+  let timeline: Timeline | undefined
+  if (hasTimeline) {
+    const monthsAhead = Math.floor(Math.random() * 12) + 1
+    const closeDate = new Date()
+    closeDate.setMonth(closeDate.getMonth() + monthsAhead)
+    
+    const quarters = ['Q1', 'Q2', 'Q3', 'Q4']
+    const quarter = quarters[Math.floor(closeDate.getMonth() / 3)]
+    
+    timeline = {
+      estimatedCloseDate: closeDate.toISOString(),
+      timeframeDescription: `${quarter} ${closeDate.getFullYear()}`,
+      urgency: (['low', 'medium', 'high', 'critical'] as const)[Math.floor(Math.random() * 4)],
+      confidence: 0.7 + Math.random() * 0.25
+    }
+  } else {
+    missingElements.push('timeline')
+  }
+  
+  // Calculate BANT score (25 points each element, weighted by confidence)
+  let score = 0
+  if (budget) score += 25 * budget.confidence
+  if (authority) score += 25 * authority.confidence
+  if (need) score += 25 * need.confidence
+  if (timeline) score += 25 * timeline.confidence
+  
+  return {
+    budget,
+    authority,
+    need,
+    timeline,
+    score: Math.round(score),
+    missingElements
+  }
+}
 
 export function generateMockEmails(count: number = 5): Communication[] {
   const emails: Communication[] = []
@@ -131,28 +299,44 @@ export function detectOpportunities(communications: Communication[], customKeywo
     
     if (foundKeywords.length === 0) return
     
-    const partnerMatch = partners.find(p => 
-      comm.content.includes(p) || comm.from.toLowerCase().includes(p.toLowerCase().replace(/\s+/g, ''))
+    // Find partner with full identifier data
+    const partnerData = partnersData.find(p => 
+      comm.content.includes(p.name) || comm.from.toLowerCase().includes(p.name.toLowerCase().replace(/\s+/g, ''))
     )
     
-    const customerMatch = customers.find(c => comm.content.includes(c) || comm.subject.includes(c))
+    // Find account with full identifier data
+    const accountData = accountsData.find(a => comm.content.includes(a.name) || comm.subject.includes(a.name))
     
-    if (!partnerMatch && !customerMatch) return
+    if (!partnerData && !accountData) return
     
-    const partner: Entity | null = partnerMatch ? {
-      name: partnerMatch,
+    // Create Entity with extended identifiers
+    const partner: Entity | null = partnerData ? {
+      name: partnerData.name,
       type: 'partner',
-      confidence: 0.85 + Math.random() * 0.14
+      confidence: 0.85 + Math.random() * 0.14,
+      partnerOneId: partnerData.partnerOneId,
+      mpnId: partnerData.mpnId
     } : null
     
-    const customer: Entity | null = customerMatch ? {
-      name: customerMatch,
+    const customer: Entity | null = accountData ? {
+      name: accountData.name,
       type: 'customer',
-      confidence: 0.80 + Math.random() * 0.19
+      confidence: 0.80 + Math.random() * 0.19,
+      crmAccountId: accountData.crmAccountId,
+      tpid: accountData.tpid
     } : null
     
-    const dealSizeMatch = comm.content.match(/\$(\d+(?:\.\d+)?[MK]?)/i)
-    const timelineMatch = comm.content.match(/Q[1-4]\s+\d{4}|(\d+)\s+months?/i)
+    // Generate BANT qualification
+    const bant = generateBANT()
+    
+    // Derive legacy fields from BANT for backward compatibility
+    const dealSize = bant.budget 
+      ? `$${(bant.budget.amountUSD / 1000000).toFixed(1)}M` 
+      : `$${(Math.random() * 5 + 0.5).toFixed(1)}M`
+    
+    const timeline = bant.timeline?.timeframeDescription || 'Q2 2026'
+    const askExpectation = bant.need?.description || customerNeeds[Math.floor(Math.random() * customerNeeds.length)]
+    const solutionArea = bant.need?.solutionArea || solutionAreas[Math.floor(Math.random() * solutionAreas.length)]
     
     opportunities.push({
       id: `opp-${comm.id}`,
@@ -165,13 +349,15 @@ export function detectOpportunities(communications: Communication[], customKeywo
       status: 'new',
       crmAction: Math.random() > 0.5 ? 'create' : 'update',
       existingOpportunityId: Math.random() > 0.5 ? `OPP-${Math.floor(Math.random() * 10000)}` : undefined,
-      dealSize: dealSizeMatch ? dealSizeMatch[0] : `$${(Math.random() * 5 + 0.5).toFixed(1)}M`,
-      timeline: timelineMatch ? timelineMatch[0] : 'Q2 2026',
       createdAt: comm.date,
       updatedAt: new Date().toISOString(),
-      // New fields for prominent display
-      askExpectation: askExpectations[Math.floor(Math.random() * askExpectations.length)],
-      solutionArea: solutionAreas[Math.floor(Math.random() * solutionAreas.length)],
+      // BANT qualification
+      bant,
+      // Legacy/derived fields for display  
+      dealSize,
+      timeline,
+      askExpectation,
+      solutionArea,
       engagementType: engagementTypes[Math.floor(Math.random() * engagementTypes.length)],
       nextSteps: nextStepsOptions[Math.floor(Math.random() * nextStepsOptions.length)]
     })
