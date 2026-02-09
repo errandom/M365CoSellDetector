@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { 
   Envelope, ChatCircle, Video, Handshake, Buildings, 
   CheckCircle, Clock, XCircle, ArrowRight, Target,
-  CurrencyDollar, CalendarBlank, Lightbulb, Sparkle
+  CurrencyDollar, CalendarBlank, Lightbulb, Sparkle,
+  User, Users, IdentificationCard, ChartBar
 } from '@phosphor-icons/react'
 import type { DetectedOpportunity, SolutionArea } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -44,7 +45,9 @@ const solutionAreaLabels: Record<SolutionArea, string> = {
   'security': 'Security',
   'data-ai': 'Data & AI',
   'app-modernization': 'App Modernization',
-  'infrastructure': 'Infrastructure'
+  'infrastructure': 'Infrastructure',
+  'business-applications': 'Business Apps',
+  'dynamics-365': 'Dynamics 365'
 }
 
 const solutionAreaColors: Record<SolutionArea, string> = {
@@ -53,7 +56,24 @@ const solutionAreaColors: Record<SolutionArea, string> = {
   'security': 'bg-red-100 text-red-800 border-red-200',
   'data-ai': 'bg-green-100 text-green-800 border-green-200',
   'app-modernization': 'bg-orange-100 text-orange-800 border-orange-200',
-  'infrastructure': 'bg-slate-100 text-slate-800 border-slate-200'
+  'infrastructure': 'bg-slate-100 text-slate-800 border-slate-200',
+  'business-applications': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+  'dynamics-365': 'bg-indigo-100 text-indigo-800 border-indigo-200'
+}
+
+// BANT score color based on completeness
+function getBANTScoreColor(score: number): string {
+  if (score >= 80) return 'text-success bg-success/10 border-success/30'
+  if (score >= 60) return 'text-warning bg-warning/10 border-warning/30'
+  if (score >= 40) return 'text-orange-600 bg-orange-50 border-orange-200'
+  return 'text-muted-foreground bg-muted/50 border-muted'
+}
+
+function getBANTScoreLabel(score: number): string {
+  if (score >= 80) return 'Strong'
+  if (score >= 60) return 'Good'
+  if (score >= 40) return 'Partial'
+  return 'Weak'
 }
 
 export function OpportunityCard({ 
@@ -140,7 +160,22 @@ export function OpportunityCard({
                 <p className="font-bold text-lg text-foreground leading-tight">
                   {opportunity.partner.name}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                {/* Partner IDs */}
+                <div className="mt-2 space-y-1">
+                  {opportunity.partner.partnerOneId && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <IdentificationCard size={12} />
+                      <span className="font-mono">{opportunity.partner.partnerOneId}</span>
+                    </div>
+                  )}
+                  {opportunity.partner.mpnId && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="text-[10px] font-medium bg-muted px-1 rounded">MPN</span>
+                      <span className="font-mono">{opportunity.partner.mpnId}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
                   {Math.round(opportunity.partner.confidence * 100)}% confidence
                 </p>
               </>
@@ -165,7 +200,22 @@ export function OpportunityCard({
                 <p className="font-bold text-lg text-foreground leading-tight">
                   {opportunity.customer.name}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                {/* Account IDs */}
+                <div className="mt-2 space-y-1">
+                  {opportunity.customer.crmAccountId && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <IdentificationCard size={12} />
+                      <span className="font-mono">{opportunity.customer.crmAccountId}</span>
+                    </div>
+                  )}
+                  {opportunity.customer.tpid && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="text-[10px] font-medium bg-muted px-1 rounded">TPID</span>
+                      <span className="font-mono">{opportunity.customer.tpid}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
                   {Math.round(opportunity.customer.confidence * 100)}% confidence
                 </p>
               </>
@@ -175,18 +225,91 @@ export function OpportunityCard({
           </div>
         </div>
         
-        {/* Ask/Expectation - Highlighted section */}
-        {opportunity.askExpectation && (
+        {/* BANT Score Indicator */}
+        {opportunity.bant && (
+          <div className="mb-4 flex items-center gap-2">
+            <div className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium",
+              getBANTScoreColor(opportunity.bant.score)
+            )}>
+              <ChartBar size={16} weight="duotone" />
+              <span>BANT: {opportunity.bant.score}% ({getBANTScoreLabel(opportunity.bant.score)})</span>
+            </div>
+            {opportunity.bant.missingElements.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                Missing: {opportunity.bant.missingElements.join(', ')}
+              </span>
+            )}
+          </div>
+        )}
+        
+        {/* Authority - Customer & Partner Contacts */}
+        {opportunity.bant?.authority && (
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            {opportunity.bant.authority.customerContact && (
+              <div className="p-3 rounded-lg bg-muted/30 border border-muted">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <User size={14} className="text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase">Customer Contact</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">{opportunity.bant.authority.customerContact.name}</p>
+                {opportunity.bant.authority.customerContact.title && (
+                  <p className="text-xs text-muted-foreground">{opportunity.bant.authority.customerContact.title}</p>
+                )}
+                {opportunity.bant.authority.customerContact.email && (
+                  <p className="text-xs text-primary truncate">{opportunity.bant.authority.customerContact.email}</p>
+                )}
+              </div>
+            )}
+            {opportunity.bant.authority.partnerContact && (
+              <div className="p-3 rounded-lg bg-muted/30 border border-muted">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Users size={14} className="text-accent" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase">Partner Contact</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">{opportunity.bant.authority.partnerContact.name}</p>
+                {opportunity.bant.authority.partnerContact.title && (
+                  <p className="text-xs text-muted-foreground">{opportunity.bant.authority.partnerContact.title}</p>
+                )}
+                {opportunity.bant.authority.partnerContact.email && (
+                  <p className="text-xs text-accent truncate">{opportunity.bant.authority.partnerContact.email}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Need / Ask - Highlighted section with products/services */}
+        {(opportunity.bant?.need || opportunity.askExpectation) && (
           <div className="mb-4 p-4 rounded-lg bg-warning/10 border border-warning/30">
             <div className="flex items-start gap-3">
               <Target size={20} weight="duotone" className="text-warning flex-shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <p className="text-xs font-semibold text-warning uppercase tracking-wide mb-1">
-                  Ask / Expectation
+                  Customer Need / Ask
                 </p>
-                <p className="text-sm font-medium text-foreground">
-                  {opportunity.askExpectation}
+                <p className="text-sm font-medium text-foreground mb-2">
+                  {opportunity.bant?.need?.description || opportunity.askExpectation}
                 </p>
+                {/* Products & Services from BANT Need */}
+                {opportunity.bant?.need?.products && opportunity.bant.need.products.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {opportunity.bant.need.products.map((product, idx) => (
+                      <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-warning/20 text-warning rounded">
+                        {product}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {opportunity.bant?.need?.services && opportunity.bant.need.services.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {opportunity.bant.need.services.map((service, idx) => (
+                      <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent rounded">
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -197,7 +320,7 @@ export function OpportunityCard({
           {opportunity.summary}
         </p>
         
-        {/* Deal info and Solution area */}
+        {/* Deal info and Solution area - Enhanced with BANT Budget */}
         <div className="flex flex-wrap gap-2 mb-4">
           {opportunity.solutionArea && (
             <Badge 
@@ -207,13 +330,40 @@ export function OpportunityCard({
               {solutionAreaLabels[opportunity.solutionArea]}
             </Badge>
           )}
-          {opportunity.dealSize && (
+          {/* Budget with currency info from BANT */}
+          {opportunity.bant?.budget ? (
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              <CurrencyDollar size={12} className="mr-1" />
+              ${(opportunity.bant.budget.amountUSD / 1000000).toFixed(1)}M USD
+              {opportunity.bant.budget.currency !== 'USD' && (
+                <span className="ml-1 text-[10px] opacity-70">
+                  ({opportunity.bant.budget.currency})
+                </span>
+              )}
+            </Badge>
+          ) : opportunity.dealSize && (
             <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
               <CurrencyDollar size={12} className="mr-1" />
               {opportunity.dealSize}
             </Badge>
           )}
-          {opportunity.timeline && (
+          {/* Timeline with urgency from BANT */}
+          {opportunity.bant?.timeline ? (
+            <Badge variant="outline" className={cn(
+              "text-xs",
+              opportunity.bant.timeline.urgency === 'critical' ? "bg-red-50 text-red-700 border-red-200" :
+              opportunity.bant.timeline.urgency === 'high' ? "bg-orange-50 text-orange-700 border-orange-200" :
+              "bg-blue-50 text-blue-700 border-blue-200"
+            )}>
+              <CalendarBlank size={12} className="mr-1" />
+              {opportunity.bant.timeline.timeframeDescription}
+              {opportunity.bant.timeline.urgency && (
+                <span className="ml-1 text-[10px] capitalize opacity-70">
+                  ({opportunity.bant.timeline.urgency})
+                </span>
+              )}
+            </Badge>
+          ) : opportunity.timeline && (
             <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
               <CalendarBlank size={12} className="mr-1" />
               {opportunity.timeline}
