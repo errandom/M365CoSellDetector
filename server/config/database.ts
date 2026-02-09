@@ -50,4 +50,3 @@ export const tables = {
   scanResultsSummary: 'dbo.vw_ScanResultsSummary',
   partnerOpportunitySummary: 'dbo.vw_PartnerOpportunitySummary'
 }
-}
