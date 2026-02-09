@@ -1,10 +1,29 @@
 /**
  * Fabric Database Service
  * Frontend service to communicate with the backend API for Fabric SQL data
+ * Uses user-delegated authentication to access Fabric SQL
  */
+
+import { authService } from './authService'
 
 // API base URL - can be configured via environment variable
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+
+/**
+ * Get the SQL access token for database operations
+ * Returns null if user is not authenticated
+ */
+async function getSqlToken(): Promise<string | null> {
+  try {
+    if (!authService.isAuthenticated()) {
+      return null
+    }
+    return await authService.getSqlAccessToken()
+  } catch (error) {
+    console.error('Failed to get SQL access token:', error)
+    return null
+  }
+}
 
 /**
  * Types mirroring the server types for frontend use
@@ -132,15 +151,26 @@ export interface ReferralSearchParams {
 
 /**
  * Generic fetch wrapper with error handling
+ * Automatically includes SQL bearer token for user-delegated auth
  */
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
+    // Get the SQL access token for the current user
+    const sqlToken = await getSqlToken()
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    }
+    
+    // Add Authorization header if we have a token
+    if (sqlToken) {
+      headers['Authorization'] = `Bearer ${sqlToken}`
+    }
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     })
 
     if (!response.ok) {
