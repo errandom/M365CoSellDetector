@@ -13,6 +13,7 @@ const customers = [
 const keywords = [
   'co-sell', 'partner', 'joint opportunity', 'collaboration', 'partnership',
   'co-selling', 'referral', 'joint proposal', 'partner engagement'
+]
 
 const solutionAreas: SolutionArea[] = [
   'azure-migration', 'modern-workplace', 'security', 'data-ai', 'app-modernization', 'infrastructure'
