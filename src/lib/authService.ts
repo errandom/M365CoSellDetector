@@ -5,7 +5,7 @@ import {
   InteractionRequiredAuthError,
   SilentRequest,
 } from '@azure/msal-browser'
-import { msalConfig, loginRequest } from './msalConfig'
+import { msalConfig, loginRequest, sqlDatabaseRequest } from './msalConfig'
 
 export class AuthService {
   private msalInstance: PublicClientApplication
@@ -71,6 +71,14 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return this.getAccount() !== null
+  }
+
+  /**
+   * Get an access token for Azure SQL / Fabric SQL database
+   * Uses the logged-in user's credentials (delegated flow)
+   */
+  async getSqlAccessToken(): Promise<string> {
+    return this.getAccessToken(sqlDatabaseRequest.scopes)
   }
 }
 
