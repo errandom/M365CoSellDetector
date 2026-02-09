@@ -36,6 +36,18 @@ export const databaseConfig: DatabaseConfig = {
 
 // Table names for the Fabric SQL database
 export const tables = {
+  // MSX data tables (read-only)
   opportunities: 'dbo._Opportunities',
-  partnerReferrals: 'dbo._PartnerReferralData'
+  partnerReferrals: 'dbo._PartnerReferralData',
+  
+  // Scan results tables (read-write)
+  scanSessions: 'dbo.ScanSessions',
+  detectedOpportunities: 'dbo.DetectedOpportunities',
+  opportunityActions: 'dbo.OpportunityActions',
+  scanSchedules: 'dbo.ScanSchedules',
+  
+  // Views
+  scanResultsSummary: 'dbo.vw_ScanResultsSummary',
+  partnerOpportunitySummary: 'dbo.vw_PartnerOpportunitySummary'
+}
 }
