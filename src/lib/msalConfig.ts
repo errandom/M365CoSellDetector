@@ -40,11 +40,6 @@ export const loginRequest = {
   ],
 }
 
-// Scope for Azure SQL / Fabric SQL database access
-export const sqlDatabaseRequest = {
-  scopes: ['https://database.windows.net/.default'],
-}
-
 // Additional scopes that require admin consent (enable when granted):
 // 'Chat.Read' - Read Teams chat messages
 // 'OnlineMeetings.Read' - Read meeting information
@@ -52,4 +47,14 @@ export const sqlDatabaseRequest = {
 
 export const graphConfig = {
   graphMeEndpoint: 'https://graph.microsoft.com/v1.0/me',
+}
+
+// MSX (Partner Co-Sell) configuration - used by msxService if enabled
+export const msxConfig = {
+  apiEndpoint: import.meta.env.VITE_MSX_API_ENDPOINT || '',
+  enabled: false,
+}
+
+export const msxRequest = {
+  scopes: ['api://msx/.default'],
 }
